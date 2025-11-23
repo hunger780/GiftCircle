@@ -4,6 +4,7 @@ import { Home, Users, PlusCircle, User as UserIcon, Gift, ExternalLink, Calendar
 import { WishlistItem, User, ContributionType, ViewState, Event, EventType, WishlistStatus } from './types.ts';
 import { MOCK_USERS, INITIAL_WISHLIST, MOCK_CURRENT_USER_ID, INITIAL_EVENTS } from './constants.ts';
 import { ContributionModal } from './components/ContributionModal.tsx';
+import { WishDetailModal } from './components/WishDetailModal.tsx';
 
 // Helper for Event Icons
 const getEventIcon = (type: EventType) => {
@@ -356,6 +357,9 @@ const App: React.FC = () => {
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
   const [contributingItem, setContributingItem] = useState<WishlistItem | null>(null);
   
+  // New state for viewing details
+  const [viewingItemId, setViewingItemId] = useState<string | null>(null);
+  
   // Wishlist Tab State
   const [wishlistTab, setWishlistTab] = useState<WishlistStatus>('ACTIVE');
 
@@ -408,6 +412,11 @@ const App: React.FC = () => {
   const myActiveEvents = useMemo(() => {
     return events.filter(e => e.userId === me.id);
   }, [events, me.id]);
+
+  // Derived Viewing Item
+  const activeViewingItem = useMemo(() => {
+    return wishlist.find(item => item.id === viewingItemId) || null;
+  }, [wishlist, viewingItemId]);
 
   // Calculate Wallet Balances
   const walletBalance = useMemo(() => {
@@ -747,29 +756,31 @@ const App: React.FC = () => {
   );
 
   const renderNav = () => (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-3 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-40">
-      <button onClick={() => setView('HOME')} className={`flex flex-col items-center space-y-1 ${view === 'HOME' ? 'text-brand-600' : 'text-gray-400'}`}>
-        <Home size={24} />
-        <span className="text-xs">Home</span>
-      </button>
-      <button onClick={() => setView('FRIENDS')} className={`flex flex-col items-center space-y-1 ${view === 'FRIENDS' || (view === 'PROFILE' && selectedFriendId) ? 'text-brand-600' : 'text-gray-400'}`}>
-        <Users size={24} />
-        <span className="text-xs">Friends</span>
-      </button>
-      <button onClick={() => setView('ADD_ITEM')} className="flex flex-col items-center space-y-1 -mt-6">
-        <div className="bg-brand-600 text-white p-3 rounded-full shadow-lg shadow-brand-300">
-          <PlusCircle size={28} />
-        </div>
-        <span className="text-xs font-medium text-gray-600">Add Wish</span>
-      </button>
-      <button onClick={() => setView('GIFT_FLOW')} className={`flex flex-col items-center space-y-1 ${view === 'GIFT_FLOW' ? 'text-brand-600' : 'text-gray-400'}`}>
-        <Gift size={24} />
-        <span className="text-xs">Contribute</span>
-      </button>
-      <button onClick={() => setView('MY_PROFILE')} className={`flex flex-col items-center space-y-1 ${view === 'MY_PROFILE' || view === 'SETTINGS' || view === 'WALLET' ? 'text-brand-600' : 'text-gray-400'}`}>
-        <UserIcon size={24} />
-        <span className="text-xs">Profile</span>
-      </button>
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t z-40 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+      <div className="max-w-md mx-auto flex justify-between items-end px-6 py-3">
+        <button onClick={() => setView('HOME')} className={`flex flex-col items-center space-y-1 ${view === 'HOME' ? 'text-brand-600' : 'text-gray-400'}`}>
+          <Home size={24} />
+          <span className="text-xs">Home</span>
+        </button>
+        <button onClick={() => setView('FRIENDS')} className={`flex flex-col items-center space-y-1 ${view === 'FRIENDS' || (view === 'PROFILE' && selectedFriendId) ? 'text-brand-600' : 'text-gray-400'}`}>
+          <Users size={24} />
+          <span className="text-xs">Friends</span>
+        </button>
+        <button onClick={() => setView('ADD_ITEM')} className="flex flex-col items-center space-y-1 -mt-6">
+          <div className="bg-brand-600 text-white p-3 rounded-full shadow-lg shadow-brand-300 transform transition-transform hover:scale-105 active:scale-95">
+            <PlusCircle size={28} />
+          </div>
+          <span className="text-xs font-medium text-gray-600">Add Wish</span>
+        </button>
+        <button onClick={() => setView('GIFT_FLOW')} className={`flex flex-col items-center space-y-1 ${view === 'GIFT_FLOW' ? 'text-brand-600' : 'text-gray-400'}`}>
+          <Gift size={24} />
+          <span className="text-xs">Contribute</span>
+        </button>
+        <button onClick={() => setView('MY_PROFILE')} className={`flex flex-col items-center space-y-1 ${view === 'MY_PROFILE' || view === 'SETTINGS' || view === 'WALLET' ? 'text-brand-600' : 'text-gray-400'}`}>
+          <UserIcon size={24} />
+          <span className="text-xs">Profile</span>
+        </button>
+      </div>
     </nav>
   );
 
@@ -779,7 +790,11 @@ const App: React.FC = () => {
     const isCancelled = item.status === 'CANCELLED';
 
     return (
-      <div key={item.id} className={`bg-white rounded-2xl shadow-sm border overflow-hidden flex flex-col ${isCancelled ? 'opacity-75 border-gray-200' : 'border-gray-100'}`}>
+      <div 
+        key={item.id} 
+        onClick={() => setViewingItemId(item.id)}
+        className={`bg-white rounded-2xl shadow-sm border overflow-hidden flex flex-col cursor-pointer transition-transform hover:scale-[1.01] ${isCancelled ? 'opacity-75 border-gray-200' : 'border-gray-100'}`}
+      >
         <div className="relative h-48">
           <img src={item.imageUrl} alt={item.title} className={`w-full h-full object-cover ${isCancelled ? 'grayscale' : ''}`} />
           {relatedEvent && !isCancelled && (
@@ -797,7 +812,13 @@ const App: React.FC = () => {
         <div className="p-4 flex-1 flex flex-col">
           <div className="flex justify-between items-start mb-2">
             <h3 className="font-bold text-gray-900 text-lg leading-tight line-clamp-2">{item.title}</h3>
-            <a href={item.productUrl} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-brand-600">
+            <a 
+                onClick={(e) => e.stopPropagation()} 
+                href={item.productUrl} 
+                target="_blank" 
+                rel="noreferrer" 
+                className="text-gray-400 hover:text-brand-600"
+            >
               <ExternalLink size={18} />
             </a>
           </div>
@@ -815,7 +836,7 @@ const App: React.FC = () => {
 
             {!isOwn && item.fundedAmount < item.price && !isCancelled && (
               <button 
-                onClick={() => setContributingItem(item)}
+                onClick={(e) => { e.stopPropagation(); setContributingItem(item); }}
                 className="w-full bg-gray-900 text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition-colors flex justify-center items-center space-x-2"
               >
                 <Gift size={18} />
@@ -824,12 +845,12 @@ const App: React.FC = () => {
             )}
             {isOwn && !isCancelled && (
                <div className="flex space-x-2">
-                  <button className="flex-1 bg-gray-50 text-gray-600 border border-gray-200 py-3 rounded-xl font-semibold flex justify-center items-center space-x-2 hover:bg-gray-100">
+                  <button onClick={(e) => e.stopPropagation()} className="flex-1 bg-gray-50 text-gray-600 border border-gray-200 py-3 rounded-xl font-semibold flex justify-center items-center space-x-2 hover:bg-gray-100">
                     <Share2 size={18} />
                     <span>Share</span>
                   </button>
                   <button 
-                    onClick={() => handleCancelItem(item.id)}
+                    onClick={(e) => { e.stopPropagation(); handleCancelItem(item.id); }}
                     className="w-12 bg-red-50 text-red-500 border border-red-100 rounded-xl flex items-center justify-center hover:bg-red-100 transition-colors"
                     title="Cancel Wish"
                   >
@@ -921,7 +942,11 @@ const App: React.FC = () => {
                             const progress = Math.min((item.fundedAmount / item.price) * 100, 100);
                             const remaining = item.price - item.fundedAmount;
                             return (
-                                <div key={item.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
+                                <div 
+                                    key={item.id} 
+                                    onClick={() => setViewingItemId(item.id)}
+                                    className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                                >
                                     <img src={item.imageUrl} alt={item.title} className="w-20 h-20 rounded-lg object-cover bg-gray-100" />
                                     <div className="flex-1 min-w-0">
                                         <h3 className="font-bold text-gray-900 truncate">{item.title}</h3>
@@ -932,7 +957,7 @@ const App: React.FC = () => {
                                             </div>
                                         </div>
                                         <button 
-                                            onClick={() => setContributingItem(item)}
+                                            onClick={(e) => { e.stopPropagation(); setContributingItem(item); }}
                                             className="mt-2 text-sm bg-gray-900 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-800 transition-colors w-full sm:w-auto flex justify-center items-center"
                                         >
                                             <DollarSign size={14} className="mr-1" /> Contribute
@@ -1105,7 +1130,13 @@ const App: React.FC = () => {
     return (
         <div className="px-4 pb-24">
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">My Profile</h2>
+                <div className="flex items-center">
+                    <button onClick={() => setView('HOME')} className="p-2 -ml-2 mr-2 text-gray-500 hover:text-gray-800">
+                        <ArrowLeft size={24} />
+                    </button>
+                    <h2 className="text-2xl font-bold text-gray-800">My Profile</h2>
+                </div>
+                
                 <button 
                   onClick={() => setView('SETTINGS')}
                   className="p-2 bg-gray-100 rounded-full text-gray-600 hover:bg-brand-50 hover:text-brand-600 transition-colors"
@@ -1422,6 +1453,13 @@ const App: React.FC = () => {
           maxAmount={me.settings.maxGiftAmount}
           onClose={() => setContributingItem(null)} 
           onContribute={handleContribute} 
+        />
+      )}
+
+      {activeViewingItem && (
+        <WishDetailModal 
+            item={activeViewingItem} 
+            onClose={() => setViewingItemId(null)} 
         />
       )}
     </div>
