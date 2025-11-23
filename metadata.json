@@ -1,4 +1,5 @@
 {
   "name": "GiftCircle",
-  "description": "A social gifting platform to encourage gifting culture via wishlists, event tagging, and crowdfunding gifts."
+  "description": "A social gifting platform to encourage gifting culture via wishlists, event tagging, and crowdfunding gifts.",
+  "requestFramePermissions": []
 }
