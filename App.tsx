@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Home, Users, PlusCircle, User as UserIcon, Gift, ExternalLink, Calendar, Share2, Search, ArrowLeft, DollarSign, LogOut, Cake, Heart, Baby, PartyPopper, Home as HomeIcon, Settings, Save, Trash2, CheckCircle, Circle, X, ShoppingBag, AlertCircle, Wallet, Landmark, CreditCard, RefreshCcw, Archive, ChevronRight, Lock, Unlock } from 'lucide-react';
+import { Home, Users, PlusCircle, User as UserIcon, Gift, ExternalLink, Calendar, Share2, Search, ArrowLeft, DollarSign, LogOut, Cake, Heart, Baby, PartyPopper, Home as HomeIcon, Settings, Save, Trash2, CheckCircle, Circle, X, ShoppingBag, AlertCircle, Wallet, Landmark, CreditCard, RefreshCcw, Archive, ChevronRight, Lock, Unlock, Phone } from 'lucide-react';
 import { WishlistItem, User, ContributionType, ViewState, Event, EventType, WishlistStatus } from './types.ts';
 import { MOCK_USERS, INITIAL_WISHLIST, MOCK_CURRENT_USER_ID, INITIAL_EVENTS } from './constants.ts';
 import { ContributionModal } from './components/ContributionModal.tsx';
@@ -460,6 +460,7 @@ const App: React.FC = () => {
       name: `${formData.get('firstName')} ${formData.get('lastName')}`,
       age: Number(formData.get('age')),
       sex: formData.get('sex') as any,
+      phoneNumber: formData.get('phoneNumber') as string,
       avatar: `https://ui-avatars.com/api/?name=${formData.get('firstName')}+${formData.get('lastName')}&background=random`,
       friends: [],
       familyMemberIds: [],
@@ -589,6 +590,7 @@ const App: React.FC = () => {
       name: `${formData.get('firstName')} ${formData.get('lastName')}`,
       age: Number(formData.get('age')),
       sex: formData.get('sex') as 'Male' | 'Female' | 'Other',
+      phoneNumber: formData.get('phoneNumber') as string,
     });
     alert('Profile saved!');
   };
@@ -712,6 +714,11 @@ const App: React.FC = () => {
                   <option value="Other">Other</option>
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-500 mb-1">Phone Number</label>
+            <input name="phoneNumber" type="tel" className="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500" required placeholder="+1 555-000-0000" />
           </div>
 
           <div>
@@ -1198,6 +1205,13 @@ const App: React.FC = () => {
                                 <option value="Female">Female</option>
                                 <option value="Other">Other</option>
                             </select>
+                        </div>
+                    </div>
+                    <div className="mt-4">
+                        <label className="block text-xs font-bold text-gray-500 mb-1">Phone Number</label>
+                        <div className="relative">
+                            <Phone className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                            <input name="phoneNumber" type="tel" defaultValue={me.phoneNumber} className="w-full pl-8 p-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500" placeholder="+1 555-000-0000" />
                         </div>
                     </div>
                 </div>

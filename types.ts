@@ -57,6 +57,7 @@ export interface User {
   name: string; // Computed or display name
   age?: number;
   sex?: 'Male' | 'Female' | 'Other';
+  phoneNumber?: string;
   avatar: string;
   friends: string[]; // array of user IDs
   familyMemberIds: string[]; // array of GiftCircle IDs
