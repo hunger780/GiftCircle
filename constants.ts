@@ -1,6 +1,6 @@
 
 
-import { User, WishlistItem, Event, EventType, FriendRequest } from './types.ts';
+import { User, WishlistItem, Event, EventType, FriendRequest, GiftCircle } from './types.ts';
 
 export const MOCK_CURRENT_USER_ID = 'u1';
 
@@ -176,6 +176,17 @@ export const INITIAL_WISHLIST: WishlistItem[] = [
     eventId: 'e2',
     status: 'ACTIVE'
   }
+];
+
+export const INITIAL_CIRCLES: GiftCircle[] = [
+    {
+        id: 'gc1',
+        name: 'Dad\'s Retirement Gift',
+        description: 'Collecting for a nice watch for Dad.',
+        adminId: 'u1',
+        memberIds: ['u1', 'u2', 'u3', 'u4'],
+        createdTimestamp: Date.now() - 10000000
+    }
 ];
 
 export const INITIAL_FRIEND_REQUESTS: FriendRequest[] = [

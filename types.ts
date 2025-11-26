@@ -35,6 +35,7 @@ export interface WishlistItem {
   imageUrl: string;
   productUrl: string;
   eventId?: string; // Optional link to specific event
+  circleId?: string; // Optional link to a gift circle
   contributions: Contribution[];
   status: WishlistStatus;
 }
@@ -46,6 +47,15 @@ export interface Event {
   date: string;
   description: string;
   type: EventType;
+}
+
+export interface GiftCircle {
+  id: string;
+  name: string;
+  description: string;
+  adminId: string;
+  memberIds: string[];
+  createdTimestamp: number;
 }
 
 export interface UserSettings {
@@ -78,4 +88,4 @@ export interface FriendRequest {
   timestamp: number;
 }
 
-export type ViewState = 'LOGIN' | 'SIGNUP' | 'HOME' | 'FRIENDS' | 'ADD_ITEM' | 'PROFILE' | 'GIFT_FLOW' | 'CREATE_EVENT' | 'MY_PROFILE' | 'SETTINGS' | 'WALLET';
+export type ViewState = 'LOGIN' | 'SIGNUP' | 'HOME' | 'FRIENDS' | 'ADD_ITEM' | 'PROFILE' | 'GIFT_FLOW' | 'CREATE_EVENT' | 'MY_PROFILE' | 'SETTINGS' | 'WALLET' | 'CIRCLE_DETAIL';
