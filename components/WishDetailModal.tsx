@@ -2,7 +2,7 @@
 import React from 'react';
 import { WishlistItem, ContributionType } from '../types.ts';
 import { MOCK_USERS } from '../constants.ts';
-import { X, Lock, Unlock, User as UserIcon, Calendar, DollarSign } from 'lucide-react';
+import { X, Lock, Unlock, User as UserIcon, Calendar, DollarSign, EyeOff, UserX } from 'lucide-react';
 
 interface Props {
   item: WishlistItem;
@@ -66,18 +66,21 @@ export const WishDetailModal: React.FC<Props> = ({ item, onClose }) => {
                             const user = getContributor(contribution.contributorId);
                             const date = new Date(contribution.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
                             
+                            const displayName = contribution.isAnonymous ? "Anonymous User" : (user ? user.firstName : 'Unknown User');
+                            const displayAvatar = contribution.isAnonymous ? null : user?.avatar;
+
                             return (
                                 <div key={`${contribution.id}-${idx}`} className="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-gray-50 transition-colors">
                                     <div className="flex items-center space-x-3">
-                                        {user ? (
-                                            <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm" />
+                                        {displayAvatar ? (
+                                            <img src={displayAvatar} alt={displayName} className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm" />
                                         ) : (
                                             <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 border-2 border-white shadow-sm">
-                                                <UserIcon size={20} />
+                                                {contribution.isAnonymous ? <UserX size={20} /> : <UserIcon size={20} />}
                                             </div>
                                         )}
                                         <div>
-                                            <p className="font-bold text-gray-900 text-sm">{user ? user.firstName : 'Unknown User'}</p>
+                                            <p className={`font-bold text-sm ${contribution.isAnonymous ? 'text-gray-500 italic' : 'text-gray-900'}`}>{displayName}</p>
                                             <div className="flex items-center mt-0.5">
                                                 <p className="text-[10px] text-gray-400 flex items-center bg-white px-1.5 py-0.5 rounded border border-gray-100">
                                                     <Calendar size={10} className="mr-1" /> {date}
@@ -95,8 +98,15 @@ export const WishDetailModal: React.FC<Props> = ({ item, onClose }) => {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="font-bold text-brand-600 bg-brand-50 px-2 py-1 rounded-lg text-sm">
-                                        +${contribution.amount}
+                                    <div className={`font-bold px-2 py-1 rounded-lg text-sm ${contribution.isAmountHidden ? 'text-gray-500 bg-gray-100' : 'text-brand-600 bg-brand-50'}`}>
+                                        {contribution.isAmountHidden ? (
+                                            <div className="flex items-center space-x-1">
+                                                <EyeOff size={12} />
+                                                <span>Secret</span>
+                                            </div>
+                                        ) : (
+                                            `+$${contribution.amount}`
+                                        )}
                                     </div>
                                 </div>
                             );

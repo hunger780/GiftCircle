@@ -20,6 +20,8 @@ export interface Contribution {
   amount: number;
   type: ContributionType;
   timestamp: number;
+  isAnonymous?: boolean;
+  isAmountHidden?: boolean;
 }
 
 export interface WishlistItem {
@@ -62,6 +64,14 @@ export interface User {
   friends: string[]; // array of user IDs
   familyMemberIds: string[]; // array of GiftCircle IDs
   settings: UserSettings;
+}
+
+export interface FriendRequest {
+  id: string;
+  fromUserId: string;
+  toUserId: string;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  timestamp: number;
 }
 
 export type ViewState = 'LOGIN' | 'SIGNUP' | 'HOME' | 'FRIENDS' | 'ADD_ITEM' | 'PROFILE' | 'GIFT_FLOW' | 'CREATE_EVENT' | 'MY_PROFILE' | 'SETTINGS' | 'WALLET';

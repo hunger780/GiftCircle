@@ -1,8 +1,8 @@
 
 import React, { useState, useMemo } from 'react';
-import { Home, Users, PlusCircle, User as UserIcon, Gift, ExternalLink, Calendar, Share2, Search, ArrowLeft, DollarSign, LogOut, Cake, Heart, Baby, PartyPopper, Home as HomeIcon, Settings, Save, Trash2, CheckCircle, Circle, X, ShoppingBag, AlertCircle, Wallet, Landmark, CreditCard, RefreshCcw, Archive, ChevronRight, Lock, Unlock, Phone } from 'lucide-react';
-import { WishlistItem, User, ContributionType, ViewState, Event, EventType, WishlistStatus } from './types.ts';
-import { MOCK_USERS, INITIAL_WISHLIST, MOCK_CURRENT_USER_ID, INITIAL_EVENTS } from './constants.ts';
+import { Home, Users, PlusCircle, User as UserIcon, Gift, ExternalLink, Calendar, Share2, Search, ArrowLeft, DollarSign, LogOut, Cake, Heart, Baby, PartyPopper, Home as HomeIcon, Settings, Save, Trash2, CheckCircle, Circle, X, ShoppingBag, AlertCircle, Wallet, Landmark, CreditCard, RefreshCcw, Archive, ChevronRight, Lock, Unlock, Phone, UserPlus, Clock, Check, XCircle, Copy } from 'lucide-react';
+import { WishlistItem, User, ContributionType, ViewState, Event, EventType, WishlistStatus, FriendRequest } from './types.ts';
+import { MOCK_USERS, INITIAL_WISHLIST, MOCK_CURRENT_USER_ID, INITIAL_EVENTS, INITIAL_FRIEND_REQUESTS } from './constants.ts';
 import { ContributionModal } from './components/ContributionModal.tsx';
 import { WishDetailModal } from './components/WishDetailModal.tsx';
 
@@ -343,6 +343,65 @@ const CreateEventView: React.FC<CreateEventViewProps> = ({ onBack, onCreate, use
   );
 };
 
+// Add Friend Modal Component
+interface AddFriendModalProps {
+    onClose: () => void;
+    onSend: (id: string) => void;
+    myId: string;
+}
+
+const AddFriendModal: React.FC<AddFriendModalProps> = ({ onClose, onSend, myId }) => {
+    const [id, setId] = useState('');
+    const [error, setError] = useState('');
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if(!id.trim()) return;
+        
+        // Basic validation before passing up
+        if (id === myId) {
+            setError("You cannot add yourself.");
+            return;
+        }
+
+        onSend(id.trim());
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+            <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl relative">
+                <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-800">
+                    <X size={20} />
+                </button>
+                
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Add to Circle</h3>
+                <p className="text-gray-500 text-sm mb-6">Enter your friend's GiftCircle ID to send them a request.</p>
+                
+                <form onSubmit={handleSubmit}>
+                    <div className="mb-4">
+                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">GiftCircle ID</label>
+                        <input 
+                            value={id}
+                            onChange={(e) => { setId(e.target.value); setError(''); }}
+                            className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none transition-all"
+                            placeholder="e.g. u2"
+                            autoFocus
+                        />
+                        {error && <p className="text-red-500 text-xs mt-2 flex items-center"><XCircle size={12} className="mr-1"/> {error}</p>}
+                    </div>
+                    
+                    <button 
+                        type="submit"
+                        className="w-full bg-brand-600 text-white py-3 rounded-xl font-bold hover:bg-brand-700 transition-colors shadow-lg shadow-brand-200"
+                    >
+                        Send Request
+                    </button>
+                </form>
+            </div>
+        </div>
+    );
+};
+
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [view, setView] = useState<ViewState>('HOME');
@@ -354,8 +413,11 @@ const App: React.FC = () => {
 
   const [wishlist, setWishlist] = useState<WishlistItem[]>(INITIAL_WISHLIST);
   const [events, setEvents] = useState<Event[]>(INITIAL_EVENTS);
+  const [friendRequests, setFriendRequests] = useState<FriendRequest[]>(INITIAL_FRIEND_REQUESTS);
+  
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
   const [contributingItem, setContributingItem] = useState<WishlistItem | null>(null);
+  const [showAddFriendModal, setShowAddFriendModal] = useState(false);
   
   // New state for viewing details
   const [viewingItemId, setViewingItemId] = useState<string | null>(null);
@@ -417,6 +479,15 @@ const App: React.FC = () => {
   const activeViewingItem = useMemo(() => {
     return wishlist.find(item => item.id === viewingItemId) || null;
   }, [wishlist, viewingItemId]);
+
+  // Friend Request Lists
+  const incomingRequests = useMemo(() => {
+      return friendRequests.filter(req => req.toUserId === me.id && req.status === 'PENDING');
+  }, [friendRequests, me.id]);
+
+  const sentRequests = useMemo(() => {
+      return friendRequests.filter(req => req.fromUserId === me.id && req.status === 'PENDING');
+  }, [friendRequests, me.id]);
 
   // Calculate Wallet Balances
   const walletBalance = useMemo(() => {
@@ -481,7 +552,7 @@ const App: React.FC = () => {
     setShowOnboarding(false);
   };
 
-  const handleContribute = (amount: number, type: ContributionType) => {
+  const handleContribute = (amount: number, type: ContributionType, isAnonymous: boolean, isAmountHidden: boolean) => {
     if (!contributingItem) return;
 
     const newContribution = {
@@ -489,7 +560,9 @@ const App: React.FC = () => {
       contributorId: me.id,
       amount,
       type,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      isAnonymous,
+      isAmountHidden
     };
 
     setWishlist(prev => prev.map(item => {
@@ -632,6 +705,61 @@ const App: React.FC = () => {
       });
   };
 
+  const handleSendFriendRequest = (id: string) => {
+      const targetUser = MOCK_USERS.find(u => u.id === id);
+      if (!targetUser) {
+          alert("User not found!");
+          return;
+      }
+      if (me.friends.includes(id)) {
+          alert("Already friends!");
+          return;
+      }
+      
+      const existingRequest = friendRequests.find(
+          req => (req.fromUserId === me.id && req.toUserId === id) || 
+                 (req.fromUserId === id && req.toUserId === me.id)
+      );
+
+      if (existingRequest) {
+          if (existingRequest.status === 'PENDING') {
+              alert("A friend request is already pending.");
+          } else {
+             alert("Already connected or request processed.");
+          }
+          return;
+      }
+
+      const newRequest: FriendRequest = {
+          id: `fr${Date.now()}`,
+          fromUserId: me.id,
+          toUserId: id,
+          status: 'PENDING',
+          timestamp: Date.now()
+      };
+
+      setFriendRequests([...friendRequests, newRequest]);
+      setShowAddFriendModal(false);
+      alert(`Request sent to ${targetUser.name}!`);
+  };
+
+  const handleAcceptFriendRequest = (requestId: string) => {
+      const req = friendRequests.find(r => r.id === requestId);
+      if (!req) return;
+
+      setFriendRequests(friendRequests.map(r => r.id === requestId ? { ...r, status: 'ACCEPTED' } : r));
+
+      // Add to current user's friends list
+      setCurrentUserData({
+          ...me,
+          friends: [...me.friends, req.fromUserId]
+      });
+  };
+
+  const handleRejectFriendRequest = (requestId: string) => {
+      setFriendRequests(friendRequests.map(r => r.id === requestId ? { ...r, status: 'REJECTED' } : r));
+  };
+
   // Render Components
   const renderLogin = () => (
     <div className="min-h-screen bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center p-4">
@@ -765,28 +893,30 @@ const App: React.FC = () => {
   const renderNav = () => (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t z-40 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
       <div className="max-w-md mx-auto flex justify-between items-end px-6 py-3">
-        <button onClick={() => setView('HOME')} className={`flex flex-col items-center space-y-1 ${view === 'HOME' ? 'text-brand-600' : 'text-gray-400'}`}>
-          <Home size={24} />
-          <span className="text-xs">Home</span>
-        </button>
-        <button onClick={() => setView('FRIENDS')} className={`flex flex-col items-center space-y-1 ${view === 'FRIENDS' || (view === 'PROFILE' && selectedFriendId) ? 'text-brand-600' : 'text-gray-400'}`}>
-          <Users size={24} />
-          <span className="text-xs">Friends</span>
-        </button>
-        <button onClick={() => setView('ADD_ITEM')} className="flex flex-col items-center space-y-1 -mt-6">
-          <div className="bg-brand-600 text-white p-3 rounded-full shadow-lg shadow-brand-300 transform transition-transform hover:scale-105 active:scale-95">
-            <PlusCircle size={28} />
-          </div>
-          <span className="text-xs font-medium text-gray-600">Add Wish</span>
-        </button>
-        <button onClick={() => setView('GIFT_FLOW')} className={`flex flex-col items-center space-y-1 ${view === 'GIFT_FLOW' ? 'text-brand-600' : 'text-gray-400'}`}>
-          <Gift size={24} />
-          <span className="text-xs">Contribute</span>
-        </button>
-        <button onClick={() => setView('MY_PROFILE')} className={`flex flex-col items-center space-y-1 ${view === 'MY_PROFILE' || view === 'SETTINGS' || view === 'WALLET' ? 'text-brand-600' : 'text-gray-400'}`}>
-          <UserIcon size={24} />
-          <span className="text-xs">Profile</span>
-        </button>
+        <div className="w-full max-w-md flex justify-between">
+            <button onClick={() => setView('HOME')} className={`flex flex-col items-center space-y-1 ${view === 'HOME' ? 'text-brand-600' : 'text-gray-400'}`}>
+            <Home size={24} />
+            <span className="text-xs">Home</span>
+            </button>
+            <button onClick={() => setView('FRIENDS')} className={`flex flex-col items-center space-y-1 ${view === 'FRIENDS' || (view === 'PROFILE' && selectedFriendId) ? 'text-brand-600' : 'text-gray-400'}`}>
+            <Users size={24} />
+            <span className="text-xs">Friends</span>
+            </button>
+            <button onClick={() => setView('ADD_ITEM')} className="flex flex-col items-center space-y-1 -mt-6">
+            <div className="bg-brand-600 text-white p-3 rounded-full shadow-lg shadow-brand-300 transform transition-transform hover:scale-105 active:scale-95">
+                <PlusCircle size={28} />
+            </div>
+            <span className="text-xs font-medium text-gray-600">Add Wish</span>
+            </button>
+            <button onClick={() => setView('GIFT_FLOW')} className={`flex flex-col items-center space-y-1 ${view === 'GIFT_FLOW' ? 'text-brand-600' : 'text-gray-400'}`}>
+            <Gift size={24} />
+            <span className="text-xs">Contribute</span>
+            </button>
+            <button onClick={() => setView('MY_PROFILE')} className={`flex flex-col items-center space-y-1 ${view === 'MY_PROFILE' || view === 'SETTINGS' || view === 'WALLET' ? 'text-brand-600' : 'text-gray-400'}`}>
+            <UserIcon size={24} />
+            <span className="text-xs">Profile</span>
+            </button>
+        </div>
       </div>
     </nav>
   );
@@ -1343,24 +1473,132 @@ const App: React.FC = () => {
         )}
 
         {view === 'FRIENDS' && (
-          <div className="px-4 space-y-4">
-             <h2 className="text-lg font-bold text-gray-800 mb-4">My Circle</h2>
-             {friends.map(friend => (
-               <div 
-                key={friend.id} 
-                onClick={() => { setSelectedFriendId(friend.id); setView('PROFILE'); }}
-                className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4 cursor-pointer hover:bg-gray-50 transition-colors"
-               >
-                 <img src={friend.avatar} alt={friend.name} className="w-14 h-14 rounded-full object-cover" />
-                 <div className="flex-1">
-                   <h3 className="font-bold text-gray-900">{friend.name}</h3>
-                   <p className="text-sm text-gray-500">3 upcoming events</p>
+          <div className="px-4 pb-20">
+             <div className="flex justify-between items-center mb-6">
+                 <h2 className="text-2xl font-bold text-gray-800">My Circle</h2>
+                 <button 
+                    onClick={() => setShowAddFriendModal(true)}
+                    className="bg-brand-600 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center space-x-2 hover:bg-brand-700 shadow-lg shadow-brand-200 transition-all active:scale-95"
+                 >
+                    <UserPlus size={18} />
+                    <span>Add Friend</span>
+                 </button>
+             </div>
+
+             {/* Show My ID for easy sharing */}
+             <div className="bg-gradient-to-r from-purple-100 to-brand-50 p-4 rounded-xl mb-6 flex justify-between items-center border border-purple-200">
+                 <div>
+                     <p className="text-xs font-bold text-purple-600 uppercase tracking-wide">My GiftCircle ID</p>
+                     <p className="text-lg font-bold text-gray-900">{me.id}</p>
                  </div>
-                 <div className="bg-gray-100 p-2 rounded-full text-gray-400">
-                    <ExternalLink size={20} />
+                 <button 
+                    onClick={() => navigator.clipboard.writeText(me.id).then(() => alert("ID copied!"))}
+                    className="p-2 bg-white rounded-lg text-gray-500 hover:text-brand-600 shadow-sm"
+                 >
+                     <Copy size={20} />
+                 </button>
+             </div>
+
+             {/* Incoming Requests */}
+             {incomingRequests.length > 0 && (
+                 <div className="mb-8">
+                     <h3 className="font-bold text-gray-800 mb-3 flex items-center">
+                         <div className="bg-red-100 text-red-500 p-1 rounded mr-2">
+                             <UserIcon size={14} />
+                         </div>
+                         Friend Requests <span className="ml-2 bg-red-100 text-red-600 px-2 py-0.5 rounded-full text-xs">{incomingRequests.length}</span>
+                     </h3>
+                     <div className="space-y-3">
+                         {incomingRequests.map(req => {
+                             const user = MOCK_USERS.find(u => u.id === req.fromUserId);
+                             if (!user) return null;
+                             return (
+                                 <div key={req.id} className="bg-white p-4 rounded-xl shadow-sm border border-red-100 flex items-center justify-between">
+                                     <div className="flex items-center space-x-3">
+                                         <img src={user.avatar} alt={user.name} className="w-12 h-12 rounded-full object-cover" />
+                                         <div>
+                                             <p className="font-bold text-gray-900">{user.name}</p>
+                                             <p className="text-xs text-gray-500">Wants to join your circle</p>
+                                         </div>
+                                     </div>
+                                     <div className="flex space-x-2">
+                                         <button 
+                                            onClick={() => handleAcceptFriendRequest(req.id)}
+                                            className="p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200"
+                                            title="Accept"
+                                         >
+                                             <Check size={20} />
+                                         </button>
+                                         <button 
+                                            onClick={() => handleRejectFriendRequest(req.id)}
+                                            className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
+                                            title="Decline"
+                                         >
+                                             <X size={20} />
+                                         </button>
+                                     </div>
+                                 </div>
+                             );
+                         })}
+                     </div>
                  </div>
-               </div>
-             ))}
+             )}
+
+             {/* Sent Pending Requests */}
+             {sentRequests.length > 0 && (
+                 <div className="mb-8">
+                     <h3 className="font-bold text-gray-800 mb-3 text-sm uppercase opacity-70 tracking-wide">Pending Sent</h3>
+                     <div className="space-y-3">
+                         {sentRequests.map(req => {
+                             const user = MOCK_USERS.find(u => u.id === req.toUserId);
+                             if (!user) return null;
+                             return (
+                                 <div key={req.id} className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex items-center justify-between opacity-80">
+                                     <div className="flex items-center space-x-3">
+                                         <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-500">
+                                             <UserIcon size={20} />
+                                         </div>
+                                         <div>
+                                             <p className="font-bold text-gray-700 text-sm">{user.name || `User ${user.id}`}</p>
+                                             <p className="text-xs text-gray-400">Request Sent</p>
+                                         </div>
+                                     </div>
+                                     <div className="flex items-center text-orange-400 text-xs font-bold px-2 py-1 bg-orange-50 rounded-md">
+                                         <Clock size={12} className="mr-1" /> Pending
+                                     </div>
+                                 </div>
+                             );
+                         })}
+                     </div>
+                 </div>
+             )}
+
+             {/* Friends List */}
+             <div className="space-y-4">
+                <h3 className="font-bold text-gray-800 mb-2">Friends ({friends.length})</h3>
+                {friends.length > 0 ? friends.map(friend => (
+                   <div 
+                    key={friend.id} 
+                    onClick={() => { setSelectedFriendId(friend.id); setView('PROFILE'); }}
+                    className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                   >
+                     <img src={friend.avatar} alt={friend.name} className="w-14 h-14 rounded-full object-cover" />
+                     <div className="flex-1">
+                       <h3 className="font-bold text-gray-900">{friend.name}</h3>
+                       <p className="text-sm text-gray-500">3 upcoming events</p>
+                     </div>
+                     <div className="bg-gray-100 p-2 rounded-full text-gray-400">
+                        <ExternalLink size={20} />
+                     </div>
+                   </div>
+                 )) : (
+                     <div className="text-center py-10 text-gray-400 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                         <Users size={32} className="mx-auto mb-2 opacity-30" />
+                         <p className="text-sm">Your circle is empty.</p>
+                         <button onClick={() => setShowAddFriendModal(true)} className="text-brand-600 font-bold text-sm mt-2 hover:underline">Add someone now</button>
+                     </div>
+                 )}
+             </div>
           </div>
         )}
 
@@ -1458,6 +1696,14 @@ const App: React.FC = () => {
 
       {showOnboarding && (
         <OnboardingModal onClose={() => setShowOnboarding(false)} />
+      )}
+
+      {showAddFriendModal && (
+          <AddFriendModal 
+            onClose={() => setShowAddFriendModal(false)}
+            onSend={handleSendFriendRequest}
+            myId={me.id}
+          />
       )}
 
       {contributingItem && (

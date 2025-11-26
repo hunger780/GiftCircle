@@ -1,5 +1,5 @@
 
-import { User, WishlistItem, Event, EventType } from './types.ts';
+import { User, WishlistItem, Event, EventType, FriendRequest } from './types.ts';
 
 export const MOCK_CURRENT_USER_ID = 'u1';
 
@@ -66,6 +66,22 @@ export const MOCK_USERS: User[] = [
     settings: {
       defaultGiftAmount: 30,
       maxGiftAmount: 1000
+    }
+  },
+  {
+    id: 'u5',
+    firstName: 'Alice',
+    lastName: 'Wonder',
+    name: 'Alice Wonder',
+    age: 26,
+    sex: 'Female',
+    phoneNumber: '555-0505',
+    avatar: 'https://picsum.photos/seed/u5/100/100',
+    friends: [],
+    familyMemberIds: [],
+    settings: {
+      defaultGiftAmount: 20,
+      maxGiftAmount: 100
     }
   }
 ];
@@ -143,5 +159,15 @@ export const INITIAL_WISHLIST: WishlistItem[] = [
     contributions: [],
     eventId: 'e2',
     status: 'ACTIVE'
+  }
+];
+
+export const INITIAL_FRIEND_REQUESTS: FriendRequest[] = [
+  {
+    id: 'fr1',
+    fromUserId: 'u5',
+    toUserId: 'u1',
+    status: 'PENDING',
+    timestamp: Date.now() - 86400000 // Yesterday
   }
 ];
