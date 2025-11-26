@@ -1,4 +1,5 @@
 
+
 import { User, WishlistItem, Event, EventType, FriendRequest } from './types.ts';
 
 export const MOCK_CURRENT_USER_ID = 'u1';
@@ -14,10 +15,13 @@ export const MOCK_USERS: User[] = [
     phoneNumber: '555-0101',
     avatar: 'https://picsum.photos/seed/u1/100/100',
     friends: ['u2', 'u3', 'u4'],
+    blockedUserIds: [],
     familyMemberIds: ['u2'],
     settings: {
       defaultGiftAmount: 25,
-      maxGiftAmount: 500
+      maxGiftAmount: 500,
+      currency: 'INR',
+      autoAcceptContacts: false
     }
   },
   {
@@ -30,10 +34,13 @@ export const MOCK_USERS: User[] = [
     phoneNumber: '555-0202',
     avatar: 'https://picsum.photos/seed/u2/100/100',
     friends: ['u1'],
+    blockedUserIds: [],
     familyMemberIds: ['u1'],
     settings: {
       defaultGiftAmount: 20,
-      maxGiftAmount: 200
+      maxGiftAmount: 200,
+      currency: 'INR',
+      autoAcceptContacts: true // Enabled for testing
     }
   },
   {
@@ -46,10 +53,13 @@ export const MOCK_USERS: User[] = [
     phoneNumber: '555-0303',
     avatar: 'https://picsum.photos/seed/u3/100/100',
     friends: ['u1'],
+    blockedUserIds: [],
     familyMemberIds: [],
     settings: {
       defaultGiftAmount: 15,
-      maxGiftAmount: 100
+      maxGiftAmount: 100,
+      currency: 'INR',
+      autoAcceptContacts: false
     }
   },
   {
@@ -62,10 +72,13 @@ export const MOCK_USERS: User[] = [
     phoneNumber: '555-0404',
     avatar: 'https://picsum.photos/seed/u4/100/100',
     friends: ['u1'],
+    blockedUserIds: [],
     familyMemberIds: [],
     settings: {
       defaultGiftAmount: 30,
-      maxGiftAmount: 1000
+      maxGiftAmount: 1000,
+      currency: 'INR',
+      autoAcceptContacts: false
     }
   },
   {
@@ -78,10 +91,13 @@ export const MOCK_USERS: User[] = [
     phoneNumber: '555-0505',
     avatar: 'https://picsum.photos/seed/u5/100/100',
     friends: [],
+    blockedUserIds: [],
     familyMemberIds: [],
     settings: {
       defaultGiftAmount: 20,
-      maxGiftAmount: 100
+      maxGiftAmount: 100,
+      currency: 'INR',
+      autoAcceptContacts: false
     }
   }
 ];
@@ -116,8 +132,8 @@ export const INITIAL_WISHLIST: WishlistItem[] = [
     imageUrl: 'https://picsum.photos/seed/tech1/300/300',
     productUrl: 'https://amazon.com',
     contributions: [
-        { id: 'c1', contributorId: 'u2', amount: 100, type: 'LOCKED' as any, timestamp: Date.now() },
-        { id: 'c2', contributorId: 'u3', amount: 20, type: 'FREE' as any, timestamp: Date.now() }
+        { id: 'c1', contributorId: 'u2', amount: 100, type: 'LOCKED' as any, timestamp: Date.now(), isAnonymous: false, isAmountHidden: false },
+        { id: 'c2', contributorId: 'u3', amount: 20, type: 'FREE' as any, timestamp: Date.now(), isAnonymous: false, isAmountHidden: false }
     ],
     eventId: 'e1',
     status: 'ACTIVE'

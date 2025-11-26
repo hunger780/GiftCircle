@@ -7,11 +7,12 @@ interface Props {
   item: WishlistItem;
   defaultAmount: number;
   maxAmount: number;
+  currencySymbol: string;
   onClose: () => void;
   onContribute: (amount: number, type: ContributionType, isAnonymous: boolean, isAmountHidden: boolean) => void;
 }
 
-export const ContributionModal: React.FC<Props> = ({ item, defaultAmount, maxAmount, onClose, onContribute }) => {
+export const ContributionModal: React.FC<Props> = ({ item, defaultAmount, maxAmount, currencySymbol, onClose, onContribute }) => {
   const remaining = item.price - item.fundedAmount;
   // Initialize with default amount, but not more than remaining
   const initialAmount = Math.min(defaultAmount, remaining);
@@ -45,13 +46,13 @@ export const ContributionModal: React.FC<Props> = ({ item, defaultAmount, maxAmo
             <img src={item.imageUrl} alt={item.title} className="w-16 h-16 rounded-lg object-cover" />
             <div>
               <p className="font-medium text-gray-900 line-clamp-1">{item.title}</p>
-              <p className="text-sm text-gray-500">${remaining} left to fund</p>
+              <p className="text-sm text-gray-500">{currencySymbol}{remaining} left to fund</p>
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Contribution Amount ($)
+              Contribution Amount ({currencySymbol})
             </label>
             <input
               type="number"
@@ -65,7 +66,7 @@ export const ContributionModal: React.FC<Props> = ({ item, defaultAmount, maxAmo
             {isOverMax ? (
               <p className="text-red-500 text-xs mt-2 flex items-center">
                 <AlertCircle size={14} className="mr-1"/>
-                Exceeds your max limit of ${maxAmount}
+                Exceeds your max limit of {currencySymbol}{maxAmount}
               </p>
             ) : (
               <input 
@@ -145,7 +146,7 @@ export const ContributionModal: React.FC<Props> = ({ item, defaultAmount, maxAmo
             disabled={isOverMax}
             className="w-full bg-brand-600 text-white py-3 rounded-xl font-bold hover:bg-brand-700 transition-colors shadow-lg shadow-brand-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Confirm Contribution (${amount})
+            Confirm Contribution ({currencySymbol}{amount})
           </button>
         </form>
       </div>

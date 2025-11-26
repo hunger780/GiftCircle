@@ -6,10 +6,11 @@ import { X, Lock, Unlock, User as UserIcon, Calendar, DollarSign, EyeOff, UserX 
 
 interface Props {
   item: WishlistItem;
+  currencySymbol: string;
   onClose: () => void;
 }
 
-export const WishDetailModal: React.FC<Props> = ({ item, onClose }) => {
+export const WishDetailModal: React.FC<Props> = ({ item, currencySymbol, onClose }) => {
   const getContributor = (id: string) => MOCK_USERS.find(u => u.id === id);
 
   // Sort contributions by timestamp descending
@@ -33,7 +34,7 @@ export const WishDetailModal: React.FC<Props> = ({ item, onClose }) => {
             </button>
             <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
                 <h3 className="font-bold text-xl leading-tight shadow-sm mb-1">{item.title}</h3>
-                <p className="text-white/80 text-xs font-medium">${item.fundedAmount} raised of ${item.price}</p>
+                <p className="text-white/80 text-xs font-medium">{currencySymbol}{item.fundedAmount} raised of {currencySymbol}{item.price}</p>
             </div>
         </div>
 
@@ -105,7 +106,7 @@ export const WishDetailModal: React.FC<Props> = ({ item, onClose }) => {
                                                 <span>Secret</span>
                                             </div>
                                         ) : (
-                                            `+$${contribution.amount}`
+                                            `+${currencySymbol}${contribution.amount}`
                                         )}
                                     </div>
                                 </div>

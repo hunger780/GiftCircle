@@ -1,10 +1,20 @@
 
+
 import React, { useState, useMemo } from 'react';
-import { Home, Users, PlusCircle, User as UserIcon, Gift, ExternalLink, Calendar, Share2, Search, ArrowLeft, DollarSign, LogOut, Cake, Heart, Baby, PartyPopper, Home as HomeIcon, Settings, Save, Trash2, CheckCircle, Circle, X, ShoppingBag, AlertCircle, Wallet, Landmark, CreditCard, RefreshCcw, Archive, ChevronRight, Lock, Unlock, Phone, UserPlus, Clock, Check, XCircle, Copy } from 'lucide-react';
+import { Home, Users, PlusCircle, User as UserIcon, Gift, ExternalLink, Calendar, Share2, Search, ArrowLeft, DollarSign, LogOut, Cake, Heart, Baby, PartyPopper, Home as HomeIcon, Settings, Save, Trash2, CheckCircle, Circle, X, ShoppingBag, AlertCircle, Wallet, Landmark, CreditCard, RefreshCcw, Archive, ChevronRight, Lock, Unlock, Phone, UserPlus, Clock, Check, XCircle, Copy, Contact, Ban } from 'lucide-react';
 import { WishlistItem, User, ContributionType, ViewState, Event, EventType, WishlistStatus, FriendRequest } from './types.ts';
 import { MOCK_USERS, INITIAL_WISHLIST, MOCK_CURRENT_USER_ID, INITIAL_EVENTS, INITIAL_FRIEND_REQUESTS } from './constants.ts';
 import { ContributionModal } from './components/ContributionModal.tsx';
 import { WishDetailModal } from './components/WishDetailModal.tsx';
+
+// Helper for Currency
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: '$',
+  INR: '₹',
+  EUR: '€',
+  GBP: '£',
+};
+const getCurrencySymbol = (code: string) => CURRENCY_SYMBOLS[code] || code;
 
 // Helper for Event Icons
 const getEventIcon = (type: EventType) => {
@@ -94,9 +104,10 @@ interface CreateEventViewProps {
   onCreate: (eventData: Partial<Event>, selectedIds: string[], newItems: Partial<WishlistItem>[]) => void;
   userItems: WishlistItem[];
   existingEvents: Event[];
+  currencySymbol: string;
 }
 
-const CreateEventView: React.FC<CreateEventViewProps> = ({ onBack, onCreate, userItems, existingEvents }) => {
+const CreateEventView: React.FC<CreateEventViewProps> = ({ onBack, onCreate, userItems, existingEvents, currencySymbol }) => {
   const [title, setTitle] = useState('');
   const [type, setType] = useState<EventType>(EventType.BIRTHDAY);
   const [date, setDate] = useState('');
@@ -247,7 +258,7 @@ const CreateEventView: React.FC<CreateEventViewProps> = ({ onBack, onCreate, use
                       <div className="flex-1 ml-8">
                         <p className={`text-sm font-bold ${isSelected ? 'text-gray-900' : 'text-gray-600'}`}>{item.title}</p>
                         <div className="flex justify-between items-center mt-1">
-                          <span className="text-xs text-gray-500">${item.price}</span>
+                          <span className="text-xs text-gray-500">{currencySymbol}{item.price}</span>
                           {relatedEvent && (
                              <span className={`text-[10px] px-1.5 py-0.5 rounded flex items-center ${isSelected ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'}`}>
                                {isSelected ? 'Moving from ' : 'Linked to '} {relatedEvent.title}
@@ -278,7 +289,7 @@ const CreateEventView: React.FC<CreateEventViewProps> = ({ onBack, onCreate, use
                  <div key={idx} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
                     <div>
                       <p className="text-sm font-bold text-gray-900">{item.title}</p>
-                      <p className="text-xs text-gray-500">${item.price} • {item.description ? item.description : 'No desc'}</p>
+                      <p className="text-xs text-gray-500">{currencySymbol}{item.price} • {item.description ? item.description : 'No desc'}</p>
                     </div>
                     <button type="button" onClick={() => handleRemoveNewItem(idx)} className="text-red-400 hover:text-red-600">
                       <Trash2 size={16} />
@@ -300,7 +311,7 @@ const CreateEventView: React.FC<CreateEventViewProps> = ({ onBack, onCreate, use
                <div className="flex space-x-2">
                  <input 
                    type="number"
-                   placeholder="Price ($)"
+                   placeholder={`Price (${currencySymbol})`}
                    className="w-24 p-2 rounded-lg border border-gray-200 focus:outline-none focus:border-brand-500"
                    value={newItemDraft.price}
                    onChange={e => setNewItemDraft({...newItemDraft, price: e.target.value})}
@@ -438,6 +449,7 @@ const App: React.FC = () => {
   };
   
   const me = currentUserData;
+  const currencySymbol = getCurrencySymbol(me.settings.currency);
 
   // Computed data
   const friends = useMemo(() => 
@@ -534,8 +546,9 @@ const App: React.FC = () => {
       phoneNumber: formData.get('phoneNumber') as string,
       avatar: `https://ui-avatars.com/api/?name=${formData.get('firstName')}+${formData.get('lastName')}&background=random`,
       friends: [],
+      blockedUserIds: [],
       familyMemberIds: [],
-      settings: { defaultGiftAmount: 20, maxGiftAmount: 200 }
+      settings: { defaultGiftAmount: 20, maxGiftAmount: 200, currency: 'INR', autoAcceptContacts: false }
     };
 
     // In a real app, we would make an API call.
@@ -678,6 +691,8 @@ const App: React.FC = () => {
       settings: {
         defaultGiftAmount: Number(formData.get('defaultGiftAmount')),
         maxGiftAmount: Number(formData.get('maxGiftAmount')),
+        currency: formData.get('currency') as string,
+        autoAcceptContacts: formData.get('autoAcceptContacts') === 'on'
       }
     });
     setView('MY_PROFILE');
@@ -716,6 +731,12 @@ const App: React.FC = () => {
           return;
       }
       
+      // Check if blocked
+      if (me.blockedUserIds.includes(id)) {
+         alert("You have blocked this user. Unblock them to add.");
+         return;
+      }
+
       const existingRequest = friendRequests.find(
           req => (req.fromUserId === me.id && req.toUserId === id) || 
                  (req.fromUserId === id && req.toUserId === me.id)
@@ -730,17 +751,33 @@ const App: React.FC = () => {
           return;
       }
 
+      // Check for auto-accept
+      // In a real app, we check if me.phoneNumber is in targetUser.contacts
+      // For simulation, we just check if the setting is ON for the target user
+      const isAutoAccepted = targetUser.settings.autoAcceptContacts;
+
       const newRequest: FriendRequest = {
           id: `fr${Date.now()}`,
           fromUserId: me.id,
           toUserId: id,
-          status: 'PENDING',
+          status: isAutoAccepted ? 'ACCEPTED' : 'PENDING',
           timestamp: Date.now()
       };
 
       setFriendRequests([...friendRequests, newRequest]);
+      
+      if (isAutoAccepted) {
+          // Update my friend list locally
+          setCurrentUserData({
+              ...me,
+              friends: [...me.friends, id]
+          });
+          alert(`You are now friends with ${targetUser.name}! (Auto-accepted via contacts)`);
+      } else {
+          alert(`Request sent to ${targetUser.name}!`);
+      }
+      
       setShowAddFriendModal(false);
-      alert(`Request sent to ${targetUser.name}!`);
   };
 
   const handleAcceptFriendRequest = (requestId: string) => {
@@ -758,6 +795,21 @@ const App: React.FC = () => {
 
   const handleRejectFriendRequest = (requestId: string) => {
       setFriendRequests(friendRequests.map(r => r.id === requestId ? { ...r, status: 'REJECTED' } : r));
+  };
+
+  const handleBlockUser = (id: string) => {
+    if (window.confirm("Are you sure you want to block this user? They will be removed from your friends list and requests.")) {
+       setCurrentUserData(prev => ({
+           ...prev,
+           friends: prev.friends.filter(fid => fid !== id),
+           blockedUserIds: [...prev.blockedUserIds, id]
+       }));
+       
+       // Clean up any pending requests between me and the blocked user
+       setFriendRequests(prev => prev.filter(req => 
+          !((req.fromUserId === me.id && req.toUserId === id) || (req.fromUserId === id && req.toUserId === me.id))
+       ));
+    }
   };
 
   // Render Components
@@ -964,8 +1016,8 @@ const App: React.FC = () => {
           
           <div className="mt-auto">
             <div className="flex justify-between text-sm font-medium mb-1">
-              <span className={isCancelled ? 'text-gray-500' : 'text-brand-600'}>${item.fundedAmount} raised</span>
-              <span className="text-gray-500">Goal: ${item.price}</span>
+              <span className={isCancelled ? 'text-gray-500' : 'text-brand-600'}>{currencySymbol}{item.fundedAmount} raised</span>
+              <span className="text-gray-500">Goal: {currencySymbol}{item.price}</span>
             </div>
             <div className="w-full bg-gray-100 rounded-full h-2.5 mb-4">
               <div className={`h-2.5 rounded-full transition-all duration-500 ${isCancelled ? 'bg-gray-400' : 'bg-brand-500'}`} style={{ width: `${progress}%` }}></div>
@@ -1088,7 +1140,7 @@ const App: React.FC = () => {
                                     <div className="flex-1 min-w-0">
                                         <h3 className="font-bold text-gray-900 truncate">{item.title}</h3>
                                         <div className="flex items-center text-xs text-gray-500 my-1">
-                                            <span className="font-medium text-brand-600 mr-2">${remaining} needed</span>
+                                            <span className="font-medium text-brand-600 mr-2">{currencySymbol}{remaining} needed</span>
                                             <div className="flex-1 bg-gray-100 rounded-full h-1.5 max-w-[100px]">
                                                 <div className="bg-brand-500 h-1.5 rounded-full" style={{ width: `${progress}%` }}></div>
                                             </div>
@@ -1172,7 +1224,7 @@ const App: React.FC = () => {
       {/* Balance Card */}
       <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-6 text-white shadow-xl mb-6">
         <p className="text-gray-400 text-sm font-medium mb-1">Total Withdrawable Balance</p>
-        <h1 className="text-4xl font-extrabold mb-6">${walletBalance.available.toFixed(2)}</h1>
+        <h1 className="text-4xl font-extrabold mb-6">{currencySymbol}{walletBalance.available.toFixed(2)}</h1>
         
         <div className="flex space-x-3">
           <button 
@@ -1198,7 +1250,7 @@ const App: React.FC = () => {
             </div>
             <div>
               <p className="text-sm text-gray-500 font-medium">Locked Funds</p>
-              <p className="text-lg font-bold text-gray-900">${walletBalance.locked.toFixed(2)}</p>
+              <p className="text-lg font-bold text-gray-900">{currencySymbol}{walletBalance.locked.toFixed(2)}</p>
             </div>
          </div>
          <p className="text-xs text-gray-400 max-w-[120px] text-right">Restricted to specific product purchases.</p>
@@ -1216,7 +1268,7 @@ const App: React.FC = () => {
                  <p className="text-xs text-gray-500">From Sarah Miller</p>
                </div>
             </div>
-            <span className="font-bold text-green-600">+$50.00</span>
+            <span className="font-bold text-green-600">+{currencySymbol}50.00</span>
          </div>
          <div className="text-center text-gray-400 text-sm py-4">
             No more transactions.
@@ -1237,14 +1289,14 @@ const App: React.FC = () => {
             <div className="mb-6">
               <p className="text-sm text-gray-500 mb-2">Amount to withdraw</p>
               <div className="text-4xl font-bold text-gray-900 mb-2 flex items-center">
-                <span className="text-gray-400 mr-1">$</span>
+                <span className="text-gray-400 mr-1">{currencySymbol}</span>
                 {walletBalance.available.toFixed(2)}
               </div>
               <p className="text-xs text-gray-400">Funds will be transferred to your linked bank account ending in ****4242.</p>
             </div>
 
             <button 
-              onClick={() => { alert(`Processing withdrawal of $${walletBalance.available}`); setShowWithdrawModal(false); }}
+              onClick={() => { alert(`Processing withdrawal of ${currencySymbol}${walletBalance.available}`); setShowWithdrawModal(false); }}
               className="w-full bg-gray-900 text-white py-4 rounded-xl font-bold text-lg mb-3"
             >
               Confirm Withdrawal
@@ -1290,14 +1342,14 @@ const App: React.FC = () => {
                 <div className="relative z-10 flex justify-between items-center">
                    <div>
                       <p className="text-gray-300 text-xs font-bold uppercase tracking-wider mb-1">Wallet Balance</p>
-                      <h3 className="text-2xl font-bold">${walletBalance.available.toFixed(2)}</h3>
+                      <h3 className="text-2xl font-bold">{currencySymbol}{walletBalance.available.toFixed(2)}</h3>
                    </div>
                    <div className="bg-white/20 p-3 rounded-xl backdrop-blur-sm group-hover:bg-white/30 transition-colors">
                       <Wallet size={24} />
                    </div>
                 </div>
                 <div className="mt-4 flex items-center text-xs text-gray-400">
-                   <span className="bg-white/10 px-2 py-1 rounded mr-2">Locked: ${walletBalance.locked}</span>
+                   <span className="bg-white/10 px-2 py-1 rounded mr-2">Locked: {currencySymbol}{walletBalance.locked}</span>
                    <span>Tap to withdraw</span>
                 </div>
             </div>
@@ -1395,9 +1447,9 @@ const App: React.FC = () => {
 
         <form onSubmit={handleSaveSettings} className="bg-white p-6 rounded-2xl shadow-sm space-y-6">
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Default Contribution Amount ($)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Default Contribution Amount ({currencySymbol})</label>
                 <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">{currencySymbol}</span>
                     <input 
                         name="defaultGiftAmount" 
                         type="number" 
@@ -1409,9 +1461,9 @@ const App: React.FC = () => {
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Max Contribution Limit ($)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Max Contribution Limit ({currencySymbol})</label>
                 <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">{currencySymbol}</span>
                     <input 
                         name="maxGiftAmount" 
                         type="number" 
@@ -1420,6 +1472,36 @@ const App: React.FC = () => {
                     />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">We'll warn you if you try to exceed this amount.</p>
+            </div>
+
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+                <select 
+                    name="currency" 
+                    defaultValue={me.settings.currency}
+                    className="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500"
+                >
+                    <option value="INR">INR (₹)</option>
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="GBP">GBP (£)</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">Display all prices in this currency.</p>
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                <label className="flex items-center space-x-3 cursor-pointer">
+                    <input 
+                        name="autoAcceptContacts" 
+                        type="checkbox" 
+                        defaultChecked={me.settings.autoAcceptContacts}
+                        className="w-5 h-5 text-brand-600 rounded focus:ring-brand-500 border-gray-300"
+                    />
+                    <div>
+                        <span className="block text-sm font-bold text-gray-800">Auto-accept requests from contacts</span>
+                        <span className="text-xs text-gray-500">Automatically accept friend requests if the sender is in your phone contacts.</span>
+                    </div>
+                </label>
             </div>
 
             <button type="submit" className="w-full bg-brand-600 text-white py-4 rounded-xl font-bold hover:bg-brand-700 shadow-lg shadow-brand-200 mt-4">
@@ -1587,8 +1669,17 @@ const App: React.FC = () => {
                        <h3 className="font-bold text-gray-900">{friend.name}</h3>
                        <p className="text-sm text-gray-500">3 upcoming events</p>
                      </div>
-                     <div className="bg-gray-100 p-2 rounded-full text-gray-400">
-                        <ExternalLink size={20} />
+                     <div className="flex items-center space-x-2">
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); handleBlockUser(friend.id); }}
+                            className="p-2 bg-red-50 text-red-400 rounded-full hover:bg-red-100 hover:text-red-600 transition-colors"
+                            title="Block User"
+                        >
+                            <Ban size={20} />
+                        </button>
+                        <div className="bg-gray-100 p-2 rounded-full text-gray-400">
+                            <ExternalLink size={20} />
+                        </div>
                      </div>
                    </div>
                  )) : (
@@ -1652,7 +1743,7 @@ const App: React.FC = () => {
                 </div>
                 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Price ({currencySymbol})</label>
                     <input name="price" type="number" className="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500" required />
                 </div>
 
@@ -1679,6 +1770,7 @@ const App: React.FC = () => {
             onCreate={handleEventCreation}
             userItems={wishlist.filter(w => w.userId === me.id && w.status === 'ACTIVE')}
             existingEvents={events}
+            currencySymbol={currencySymbol}
           />
         )}
 
@@ -1711,6 +1803,7 @@ const App: React.FC = () => {
           item={contributingItem}
           defaultAmount={me.settings.defaultGiftAmount}
           maxAmount={me.settings.maxGiftAmount}
+          currencySymbol={currencySymbol}
           onClose={() => setContributingItem(null)} 
           onContribute={handleContribute} 
         />
@@ -1719,6 +1812,7 @@ const App: React.FC = () => {
       {activeViewingItem && (
         <WishDetailModal 
             item={activeViewingItem} 
+            currencySymbol={currencySymbol}
             onClose={() => setViewingItemId(null)} 
         />
       )}

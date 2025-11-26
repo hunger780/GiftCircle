@@ -1,4 +1,5 @@
 
+
 export enum ContributionType {
   LOCKED = 'LOCKED', // Only for the specific product
   FREE = 'FREE'     // User can use cash for anything
@@ -50,6 +51,8 @@ export interface Event {
 export interface UserSettings {
   defaultGiftAmount: number;
   maxGiftAmount: number;
+  currency: string;
+  autoAcceptContacts: boolean;
 }
 
 export interface User {
@@ -62,6 +65,7 @@ export interface User {
   phoneNumber?: string;
   avatar: string;
   friends: string[]; // array of user IDs
+  blockedUserIds: string[]; // array of blocked user IDs
   familyMemberIds: string[]; // array of GiftCircle IDs
   settings: UserSettings;
 }
