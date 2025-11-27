@@ -1,7 +1,7 @@
 
 
 import React, { useState, useMemo } from 'react';
-import { Home, Users, PlusCircle, User as UserIcon, Gift, ExternalLink, Calendar, Share2, Search, ArrowLeft, DollarSign, LogOut, Cake, Heart, Baby, PartyPopper, Home as HomeIcon, Settings, Save, Trash2, CheckCircle, Circle, X, ShoppingBag, AlertCircle, Wallet, Landmark, CreditCard, RefreshCcw, Archive, ChevronRight, Lock, Unlock, Phone, UserPlus, Clock, Check, XCircle, Copy, Contact, Ban, MessageCircle, Target } from 'lucide-react';
+import { Home, Users, PlusCircle, User as UserIcon, Gift, ExternalLink, Calendar, Share2, Search, ArrowLeft, DollarSign, LogOut, Cake, Heart, Baby, PartyPopper, Home as HomeIcon, Settings, Save, Trash2, CheckCircle, Circle, X, ShoppingBag, AlertCircle, Wallet, Landmark, CreditCard, RefreshCcw, Archive, ChevronRight, Lock, Unlock, Phone, UserPlus, Clock, Check, XCircle, Copy, Contact, Ban, MessageCircle, Target, Link as LinkIcon, PenTool, Loader2 } from 'lucide-react';
 import { WishlistItem, User, ContributionType, ViewState, Event, EventType, WishlistStatus, FriendRequest, GiftCircle } from './types.ts';
 import { MOCK_USERS, INITIAL_WISHLIST, MOCK_CURRENT_USER_ID, INITIAL_EVENTS, INITIAL_FRIEND_REQUESTS, INITIAL_CIRCLES } from './constants.ts';
 import { ContributionModal } from './components/ContributionModal.tsx';
@@ -545,8 +545,11 @@ const App: React.FC = () => {
   // Wallet State
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   
-  // Adding Item State - to know if we are adding to a circle
+  // Adding Item State
   const [addingItemToCircleId, setAddingItemToCircleId] = useState<string | null>(null);
+  const [addItemMethod, setAddItemMethod] = useState<'LINK' | 'MANUAL'>('LINK');
+  const [itemDraft, setItemDraft] = useState({ title: '', price: '', url: '', description: '', eventId: '' });
+  const [isSimulatingFetch, setIsSimulatingFetch] = useState(false);
 
   const getUser = (id: string) => {
     if (id === currentUserData.id) return currentUserData;
@@ -694,27 +697,45 @@ const App: React.FC = () => {
     setContributingItem(null);
   };
 
+  const handleFetchItemDetails = () => {
+    if (!itemDraft.url) return;
+    setIsSimulatingFetch(true);
+    // Simulate API delay
+    setTimeout(() => {
+        setItemDraft(prev => ({
+            ...prev,
+            title: "Simulated Product Title",
+            price: '249',
+            description: "Automatically fetched description for the product link."
+        }));
+        setAddItemMethod('MANUAL'); // Switch to manual view to show filled details
+        setIsSimulatingFetch(false);
+    }, 1500);
+  };
+
   const handleAddItem = (e: React.FormEvent) => {
     e.preventDefault();
-    const form = e.target as HTMLFormElement;
-    const formData = new FormData(form);
     
     const newItem: WishlistItem = {
       id: Date.now().toString(),
       userId: me.id,
-      title: formData.get('title') as string,
-      description: "Manually added item description",
-      price: Number(formData.get('price')),
+      title: itemDraft.title,
+      description: itemDraft.description || "No description provided",
+      price: Number(itemDraft.price),
       fundedAmount: 0,
       imageUrl: `https://picsum.photos/seed/${Date.now()}/300/300`,
-      productUrl: formData.get('url') as string,
-      eventId: (formData.get('eventId') as string) || undefined,
+      productUrl: itemDraft.url,
+      eventId: itemDraft.eventId || undefined,
       circleId: addingItemToCircleId || undefined, // Link to circle if adding from circle
       contributions: [],
       status: 'ACTIVE'
     };
     setWishlist([...wishlist, newItem]);
     
+    // Reset Draft
+    setItemDraft({ title: '', price: '', url: '', description: '', eventId: '' });
+    setAddItemMethod('LINK');
+
     if (addingItemToCircleId) {
         setView('CIRCLE_DETAIL');
         setAddingItemToCircleId(null);
@@ -931,6 +952,7 @@ const App: React.FC = () => {
 
   const handleAddCircleGoal = (circleId: string) => {
       setAddingItemToCircleId(circleId);
+      setAddItemMethod('LINK'); // Default to link
       setView('ADD_ITEM');
   };
 
@@ -1562,6 +1584,20 @@ const App: React.FC = () => {
                 </button>
             </div>
 
+            {/* My ID Card - Moved from Friends View */}
+            <div className="bg-gradient-to-r from-purple-100 to-brand-50 p-4 rounded-xl mb-6 flex justify-between items-center border border-purple-200">
+                <div>
+                    <p className="text-xs font-bold text-purple-600 uppercase tracking-wide">My GiftCircle ID</p>
+                    <p className="text-lg font-bold text-gray-900">{me.id}</p>
+                </div>
+                <button 
+                    onClick={() => navigator.clipboard.writeText(me.id).then(() => alert("ID copied!"))}
+                    className="p-2 bg-white rounded-lg text-gray-500 hover:text-brand-600 shadow-sm"
+                >
+                    <Copy size={20} />
+                </button>
+            </div>
+
             {/* Wallet Entry Card */}
             <div 
               onClick={() => setView('WALLET')}
@@ -1813,20 +1849,6 @@ const App: React.FC = () => {
 
              {friendsViewTab === 'FRIENDS' ? (
                 <>
-                    {/* Show My ID for easy sharing */}
-                    <div className="bg-gradient-to-r from-purple-100 to-brand-50 p-4 rounded-xl mb-6 flex justify-between items-center border border-purple-200">
-                        <div>
-                            <p className="text-xs font-bold text-purple-600 uppercase tracking-wide">My GiftCircle ID</p>
-                            <p className="text-lg font-bold text-gray-900">{me.id}</p>
-                        </div>
-                        <button 
-                            onClick={() => navigator.clipboard.writeText(me.id).then(() => alert("ID copied!"))}
-                            className="p-2 bg-white rounded-lg text-gray-500 hover:text-brand-600 shadow-sm"
-                        >
-                            <Copy size={20} />
-                        </button>
-                    </div>
-
                     {/* Incoming Requests */}
                     {incomingRequests.length > 0 && (
                         <div className="mb-8">
@@ -2038,41 +2060,123 @@ const App: React.FC = () => {
                     </div>
                 )}
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Product Link</label>
-                    <input name="url" type="url" placeholder="https://amazon.com/..." className="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500" required />
-                    <p className="text-xs text-gray-400 mt-1">Paste a link from Amazon or Flipkart</p>
-                </div>
-                
-                <div className="p-4 bg-blue-50 rounded-xl text-blue-800 text-sm mb-4">
-                    Tip: In the live version, we'll auto-fill details from the link!
+                {/* Entry Method Toggle */}
+                <div className="bg-gray-100 p-1 rounded-xl flex mb-4">
+                     <button 
+                        type="button"
+                        onClick={() => setAddItemMethod('LINK')}
+                        className={`flex-1 py-2 rounded-lg text-sm font-bold flex items-center justify-center space-x-2 transition-all ${addItemMethod === 'LINK' ? 'bg-white text-brand-600 shadow-sm' : 'text-gray-500'}`}
+                     >
+                        <LinkIcon size={16} />
+                        <span>Link Auto-fill</span>
+                     </button>
+                     <button 
+                        type="button"
+                        onClick={() => setAddItemMethod('MANUAL')}
+                        className={`flex-1 py-2 rounded-lg text-sm font-bold flex items-center justify-center space-x-2 transition-all ${addItemMethod === 'MANUAL' ? 'bg-white text-brand-600 shadow-sm' : 'text-gray-500'}`}
+                     >
+                        <PenTool size={16} />
+                        <span>Manual Entry</span>
+                     </button>
                 </div>
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
-                    <input name="title" type="text" className="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500" required />
-                </div>
-                
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Price ({currencySymbol})</label>
-                    <input name="price" type="number" className="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500" required />
-                </div>
+                {addItemMethod === 'LINK' ? (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-left duration-200">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Product Link</label>
+                            <input 
+                                value={itemDraft.url}
+                                onChange={e => setItemDraft({...itemDraft, url: e.target.value})}
+                                type="url" 
+                                placeholder="https://amazon.com/..." 
+                                className="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500" 
+                                autoFocus
+                            />
+                            <p className="text-xs text-gray-400 mt-1">Paste a link from Amazon or Flipkart</p>
+                        </div>
+                        
+                        <div className="p-4 bg-blue-50 rounded-xl text-blue-800 text-sm">
+                            Tip: We'll attempt to fetch the product name and price automatically.
+                        </div>
 
-                {!addingItemToCircleId && (
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Tag with Event (Optional)</label>
-                        <select name="eventId" className="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500 text-gray-700">
-                            <option value="">-- No Event --</option>
-                            {myActiveEvents.map(event => (
-                                <option key={event.id} value={event.id}>{event.title}</option>
-                            ))}
-                        </select>
+                        <button 
+                            type="button" 
+                            onClick={handleFetchItemDetails}
+                            disabled={!itemDraft.url || isSimulatingFetch}
+                            className="w-full bg-brand-600 text-white py-4 rounded-xl font-bold hover:bg-brand-700 shadow-lg shadow-brand-200 flex justify-center items-center disabled:opacity-70"
+                        >
+                            {isSimulatingFetch ? <Loader2 className="animate-spin mr-2" /> : 'Fetch Details'}
+                        </button>
+                    </div>
+                ) : (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-right duration-200">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
+                            <input 
+                                value={itemDraft.title}
+                                onChange={e => setItemDraft({...itemDraft, title: e.target.value})}
+                                type="text" 
+                                className="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500" 
+                                required 
+                                placeholder="e.g. Sony Headphones"
+                            />
+                        </div>
+                        
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Price ({currencySymbol})</label>
+                            <input 
+                                value={itemDraft.price}
+                                onChange={e => setItemDraft({...itemDraft, price: e.target.value})}
+                                type="number" 
+                                className="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500" 
+                                required 
+                                placeholder="0.00"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+                            <textarea 
+                                value={itemDraft.description}
+                                onChange={e => setItemDraft({...itemDraft, description: e.target.value})}
+                                className="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500" 
+                                rows={3}
+                                placeholder="Add notes about size, color, etc."
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Product Link (Optional)</label>
+                            <input 
+                                value={itemDraft.url}
+                                onChange={e => setItemDraft({...itemDraft, url: e.target.value})}
+                                type="url" 
+                                className="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500" 
+                                placeholder="https://..."
+                            />
+                        </div>
+
+                        {!addingItemToCircleId && (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Tag with Event (Optional)</label>
+                                <select 
+                                    value={itemDraft.eventId}
+                                    onChange={e => setItemDraft({...itemDraft, eventId: e.target.value})}
+                                    className="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500 text-gray-700"
+                                >
+                                    <option value="">-- No Event --</option>
+                                    {myActiveEvents.map(event => (
+                                        <option key={event.id} value={event.id}>{event.title}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        <button type="submit" className="w-full bg-brand-600 text-white py-4 rounded-xl font-bold hover:bg-brand-700 shadow-lg shadow-brand-200 mt-4">
+                            {addingItemToCircleId ? 'Set Circle Goal' : 'Add Wish'}
+                        </button>
                     </div>
                 )}
-
-                 <button type="submit" className="w-full bg-brand-600 text-white py-4 rounded-xl font-bold hover:bg-brand-700 shadow-lg shadow-brand-200 mt-4">
-                    {addingItemToCircleId ? 'Set Circle Goal' : 'Add Wish'}
-                </button>
             </form>
           </div>
         )}
