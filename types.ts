@@ -47,6 +47,7 @@ export interface Event {
   date: string;
   description: string;
   type: EventType;
+  inviteeIds: string[];
 }
 
 export interface GiftCircle {
@@ -88,4 +89,16 @@ export interface FriendRequest {
   timestamp: number;
 }
 
-export type ViewState = 'LOGIN' | 'SIGNUP' | 'HOME' | 'FRIENDS' | 'ADD_ITEM' | 'PROFILE' | 'GIFT_FLOW' | 'CREATE_EVENT' | 'MY_PROFILE' | 'SETTINGS' | 'WALLET' | 'CIRCLE_DETAIL';
+export interface Vendor {
+  id: string;
+  name: string;
+  type: string; // 'Organizer', 'Supplier', 'Venue'
+  rating: number;
+  reviews: number;
+  address: string;
+  pincode: string;
+  imageUrl: string;
+  distance: string;
+}
+
+export type ViewState = 'LOGIN' | 'SIGNUP' | 'HOME' | 'FRIENDS' | 'ADD_ITEM' | 'PROFILE' | 'GIFT_FLOW' | 'CREATE_EVENT' | 'MY_PROFILE' | 'SETTINGS' | 'WALLET' | 'CIRCLE_DETAIL' | 'EVENT_DETAIL';

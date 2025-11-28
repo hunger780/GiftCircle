@@ -1,9 +1,9 @@
 
 
 import React, { useState, useMemo } from 'react';
-import { Home, Users, PlusCircle, User as UserIcon, Gift, ExternalLink, Calendar, Share2, Search, ArrowLeft, DollarSign, LogOut, Cake, Heart, Baby, PartyPopper, Home as HomeIcon, Settings, Save, Trash2, CheckCircle, Circle, X, ShoppingBag, AlertCircle, Wallet, Landmark, CreditCard, RefreshCcw, Archive, ChevronRight, Lock, Unlock, Phone, UserPlus, Clock, Check, XCircle, Copy, Contact, Ban, MessageCircle, Target, Link as LinkIcon, PenTool, Loader2 } from 'lucide-react';
-import { WishlistItem, User, ContributionType, ViewState, Event, EventType, WishlistStatus, FriendRequest, GiftCircle } from './types.ts';
-import { MOCK_USERS, INITIAL_WISHLIST, MOCK_CURRENT_USER_ID, INITIAL_EVENTS, INITIAL_FRIEND_REQUESTS, INITIAL_CIRCLES } from './constants.ts';
+import { Home, Users, PlusCircle, User as UserIcon, Gift, ExternalLink, Calendar, Share2, Search, ArrowLeft, DollarSign, LogOut, Cake, Heart, Baby, PartyPopper, Home as HomeIcon, Settings, Save, Trash2, CheckCircle, Circle, X, ShoppingBag, AlertCircle, Wallet, Landmark, CreditCard, RefreshCcw, Archive, ChevronRight, Lock, Unlock, Phone, UserPlus, Clock, Check, XCircle, Copy, Contact, Ban, MessageCircle, Target, Link as LinkIcon, PenTool, Loader2, MapPin, Star, PhoneCall, Mail, Filter } from 'lucide-react';
+import { WishlistItem, User, ContributionType, ViewState, Event, EventType, WishlistStatus, FriendRequest, GiftCircle, Vendor } from './types.ts';
+import { MOCK_USERS, INITIAL_WISHLIST, MOCK_CURRENT_USER_ID, INITIAL_EVENTS, INITIAL_FRIEND_REQUESTS, INITIAL_CIRCLES, MOCK_VENDORS } from './constants.ts';
 import { ContributionModal } from './components/ContributionModal.tsx';
 import { WishDetailModal } from './components/WishDetailModal.tsx';
 
@@ -394,7 +394,7 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({ onClose, onSend, myId }
                         <input 
                             value={id}
                             onChange={(e) => { setId(e.target.value); setError(''); }}
-                            className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none transition-all"
+                            className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 focus:border-brand-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none transition-all"
                             placeholder="e.g. u2"
                             autoFocus
                         />
@@ -402,7 +402,7 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({ onClose, onSend, myId }
                     </div>
                     
                     <button 
-                        type="submit"
+                        type="submit" 
                         className="w-full bg-brand-600 text-white py-3 rounded-xl font-bold hover:bg-brand-700 transition-colors shadow-lg shadow-brand-200"
                     >
                         Send Request
@@ -509,6 +509,73 @@ const CreateCircleModal: React.FC<CreateCircleModalProps> = ({ onClose, onCreate
     );
 };
 
+// Event Invite Modal
+interface EventInviteModalProps {
+  onClose: () => void;
+  onSave: (selectedIds: string[]) => void;
+  friends: User[];
+  existingInviteeIds: string[];
+}
+
+const EventInviteModal: React.FC<EventInviteModalProps> = ({ onClose, onSave, friends, existingInviteeIds }) => {
+  const [selectedFriends, setSelectedFriends] = useState<Set<string>>(new Set(existingInviteeIds));
+
+  const toggleFriend = (id: string) => {
+    const next = new Set(selectedFriends);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedFriends(next);
+  };
+
+  const handleSave = () => {
+    onSave(Array.from(selectedFriends));
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl relative max-h-[90vh] flex flex-col">
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-800">
+          <X size={24} />
+        </button>
+
+        <h3 className="text-xl font-bold text-gray-900 mb-4">Invite Guests</h3>
+
+        <div className="flex-1 overflow-y-auto space-y-2 pr-1 pb-4">
+          {friends.length > 0 ? friends.map(friend => {
+            const isSelected = selectedFriends.has(friend.id);
+            return (
+              <div 
+                key={friend.id}
+                onClick={() => toggleFriend(friend.id)}
+                className={`flex items-center p-3 rounded-xl border cursor-pointer transition-colors ${isSelected ? 'border-brand-500 bg-brand-50' : 'border-gray-100'}`}
+              >
+                <div className={`w-5 h-5 rounded-full border mr-3 flex items-center justify-center ${isSelected ? 'bg-brand-500 border-brand-500' : 'border-gray-300'}`}>
+                  {isSelected && <Check size={12} className="text-white" />}
+                </div>
+                <img src={friend.avatar} alt={friend.name} className="w-10 h-10 rounded-full mr-3" />
+                <span className={`font-medium ${isSelected ? 'text-gray-900' : 'text-gray-600'}`}>{friend.name}</span>
+              </div>
+            );
+          }) : (
+            <div className="text-center py-8 text-gray-400">
+              <p>You have no friends to invite.</p>
+              <p className="text-xs mt-1">Add friends from the "Friends" tab.</p>
+            </div>
+          )}
+        </div>
+
+        <button 
+          onClick={handleSave}
+          className="w-full bg-brand-600 text-white py-3 rounded-xl font-bold hover:bg-brand-700 transition-colors shadow-lg shadow-brand-200 mt-4"
+        >
+          Save Guest List ({selectedFriends.size})
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [view, setView] = useState<ViewState>('HOME');
@@ -531,6 +598,8 @@ const App: React.FC = () => {
   
   // New state for viewing details
   const [viewingItemId, setViewingItemId] = useState<string | null>(null);
+  const [viewingEventId, setViewingEventId] = useState<string | null>(null);
+  const [showEventInviteModal, setShowEventInviteModal] = useState(false);
   
   // Wishlist Tab State
   const [wishlistTab, setWishlistTab] = useState<WishlistStatus>('ACTIVE');
@@ -550,6 +619,12 @@ const App: React.FC = () => {
   const [addItemMethod, setAddItemMethod] = useState<'LINK' | 'MANUAL'>('LINK');
   const [itemDraft, setItemDraft] = useState({ title: '', price: '', url: '', description: '', eventId: '' });
   const [isSimulatingFetch, setIsSimulatingFetch] = useState(false);
+
+  // Vendor Search State
+  const [vendorSearchQuery, setVendorSearchQuery] = useState('');
+  const [vendorPincode, setVendorPincode] = useState('');
+  const [vendorMinRating, setVendorMinRating] = useState<number>(0);
+
 
   const getUser = (id: string) => {
     if (id === currentUserData.id) return currentUserData;
@@ -608,6 +683,24 @@ const App: React.FC = () => {
   const sentRequests = useMemo(() => {
       return friendRequests.filter(req => req.fromUserId === me.id && req.status === 'PENDING');
   }, [friendRequests, me.id]);
+
+  // Filter Vendors
+  const filteredVendors = useMemo(() => {
+    return MOCK_VENDORS.filter(v => {
+      // Name/Type search
+      const matchesSearch = !vendorSearchQuery || 
+        v.name.toLowerCase().includes(vendorSearchQuery.toLowerCase()) || 
+        v.type.toLowerCase().includes(vendorSearchQuery.toLowerCase());
+      
+      // Pincode Search (startswith)
+      const matchesPincode = !vendorPincode || v.pincode.startsWith(vendorPincode);
+      
+      // Rating Filter
+      const matchesRating = v.rating >= vendorMinRating;
+
+      return matchesSearch && matchesPincode && matchesRating;
+    });
+  }, [vendorSearchQuery, vendorPincode, vendorMinRating]);
 
   // Calculate Wallet Balances
   const walletBalance = useMemo(() => {
@@ -764,6 +857,7 @@ const App: React.FC = () => {
           type: eventData.type as EventType,
           date: eventData.date!,
           description: eventData.description || '',
+          inviteeIds: []
       };
 
       setEvents([...events, newEvent]);
@@ -793,6 +887,16 @@ const App: React.FC = () => {
 
       setWishlist([...updatedWishlist, ...createdItems]);
       setView('HOME');
+  };
+
+  const handleUpdateEventInvites = (selectedIds: string[]) => {
+    if (!viewingEventId) return;
+    setEvents(events.map(e => {
+      if (e.id === viewingEventId) {
+        return { ...e, inviteeIds: selectedIds };
+      }
+      return e;
+    }));
   };
 
   const handleSaveProfile = (e: React.FormEvent) => {
@@ -954,6 +1058,11 @@ const App: React.FC = () => {
       setAddingItemToCircleId(circleId);
       setAddItemMethod('LINK'); // Default to link
       setView('ADD_ITEM');
+  };
+
+  const handleEventClick = (eventId: string) => {
+      setViewingEventId(eventId);
+      setView('EVENT_DETAIL');
   };
 
   // Render Components
@@ -1225,7 +1334,11 @@ const App: React.FC = () => {
             {events.length > 0 ? (
               <div className="flex overflow-x-auto px-4 space-x-4 pb-4 scrollbar-hide">
                   {events.map(e => (
-                      <div key={e.id} className="flex-shrink-0 w-64 bg-gradient-to-br from-brand-600 to-purple-600 rounded-2xl p-4 text-white shadow-lg relative overflow-hidden">
+                      <div 
+                        key={e.id} 
+                        onClick={() => handleEventClick(e.id)}
+                        className="flex-shrink-0 w-64 bg-gradient-to-br from-brand-600 to-purple-600 rounded-2xl p-4 text-white shadow-lg relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:scale-[1.02]"
+                      >
                           <div className="absolute top-0 right-0 p-4 opacity-10">
                             {getEventIcon(e.type)}
                           </div>
@@ -1235,6 +1348,10 @@ const App: React.FC = () => {
                           </div>
                           <h3 className="font-bold text-xl mb-2 leading-tight">{e.title}</h3>
                           <p className="text-white/80 text-sm line-clamp-2">{e.description}</p>
+                          <div className="mt-4 pt-3 border-t border-white/10 flex items-center text-xs font-medium text-white/90">
+                              <span>Tap for details & suppliers</span>
+                              <ChevronRight size={14} className="ml-1" />
+                          </div>
                       </div>
                   ))}
               </div>
@@ -1248,6 +1365,203 @@ const App: React.FC = () => {
         </div>
     )
   }
+
+  const renderEventDetail = () => {
+     const event = events.find(e => e.id === viewingEventId);
+     if (!event) return null;
+     const linkedWishes = wishlist.filter(w => w.eventId === event.id && w.status === 'ACTIVE');
+     const invitees = event.inviteeIds?.map(id => getUser(id)).filter(Boolean) || [];
+     const isOwner = event.userId === me.id;
+
+     return (
+        <div className="px-4 pb-24">
+             <div className="flex items-center mb-6">
+                <button onClick={() => setView('HOME')} className="p-2 -ml-2 text-gray-500 hover:text-gray-800">
+                    <ArrowLeft size={24} />
+                </button>
+                <h2 className="text-xl font-bold text-gray-800 ml-2">Event Details</h2>
+             </div>
+
+             {/* Event Header */}
+             <div className="bg-gradient-to-br from-brand-600 to-purple-600 rounded-2xl p-6 text-white shadow-lg mb-8 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-8 opacity-10 scale-150">
+                    {getEventIcon(event.type)}
+                  </div>
+                  <div className="flex items-center space-x-2 mb-2 bg-white/20 w-fit px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">
+                      {getEventIcon(event.type)}
+                      <span>{event.type}</span>
+                  </div>
+                  <h1 className="text-3xl font-extrabold mb-2">{event.title}</h1>
+                  <p className="text-purple-100 text-lg mb-4 flex items-center">
+                      <Calendar size={18} className="mr-2" />
+                      {new Date(event.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                  </p>
+                  <p className="opacity-90 leading-relaxed">{event.description}</p>
+             </div>
+
+            {/* Guest List Section */}
+             <div className="mb-8 bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-bold text-gray-800 flex items-center">
+                    <Users size={18} className="mr-2 text-brand-500" /> Guest List
+                    <span className="ml-2 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">{invitees.length}</span>
+                  </h3>
+                  {isOwner && (
+                    <button 
+                      onClick={() => setShowEventInviteModal(true)}
+                      className="text-brand-600 text-xs font-bold flex items-center bg-brand-50 px-3 py-1.5 rounded-lg hover:bg-brand-100"
+                    >
+                      <UserPlus size={14} className="mr-1" /> Invite
+                    </button>
+                  )}
+                </div>
+                
+                {invitees.length > 0 ? (
+                  <div className="flex -space-x-3 overflow-x-auto pb-2 scrollbar-hide px-2">
+                     {invitees.map(user => (
+                       <img 
+                          key={user!.id} 
+                          src={user!.avatar} 
+                          alt={user!.name} 
+                          title={user!.name}
+                          className="w-10 h-10 rounded-full border-2 border-white shadow-sm" 
+                       />
+                     ))}
+                     <div className="w-10 h-10 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-gray-500 font-medium">
+                       ...
+                     </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-400 italic">No guests invited yet.</p>
+                )}
+             </div>
+
+             {/* Linked Wishes */}
+             <div className="mb-8">
+                 <h3 className="font-bold text-gray-800 mb-3 flex justify-between items-center">
+                     <span>Linked Wishes</span>
+                     <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{linkedWishes.length}</span>
+                 </h3>
+                 {linkedWishes.length > 0 ? (
+                    <div className="flex space-x-3 overflow-x-auto pb-2 scrollbar-hide">
+                        {linkedWishes.map(w => (
+                            <div key={w.id} className="flex-shrink-0 w-40 bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                                <img src={w.imageUrl} className="w-full h-24 object-cover rounded-lg mb-2" />
+                                <p className="font-bold text-sm text-gray-900 truncate">{w.title}</p>
+                                <p className="text-xs text-brand-600 font-bold">{currencySymbol}{w.fundedAmount} / {currencySymbol}{w.price}</p>
+                            </div>
+                        ))}
+                    </div>
+                 ) : (
+                    <p className="text-sm text-gray-500 italic">No wishes linked to this event yet.</p>
+                 )}
+             </div>
+
+             {/* Supplier Search Section */}
+             <div>
+                 <div className="flex items-center space-x-2 mb-4">
+                     <div className="bg-blue-100 p-2 rounded-lg text-blue-600">
+                         <Search size={20} />
+                     </div>
+                     <div>
+                         <h3 className="font-bold text-gray-800 text-lg">Find Local Suppliers</h3>
+                         <p className="text-xs text-gray-500">Search for organizers, venues & more</p>
+                     </div>
+                 </div>
+
+                 {/* Filters Row */}
+                 <div className="flex space-x-2 mb-3">
+                    <div className="relative flex-1">
+                        <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                        <input 
+                            className="w-full pl-8 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            placeholder="Pincode"
+                            value={vendorPincode}
+                            onChange={(e) => setVendorPincode(e.target.value)}
+                        />
+                    </div>
+                    <div className="relative">
+                        <Star className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                        <select 
+                            className="pl-8 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none"
+                            value={vendorMinRating}
+                            onChange={(e) => setVendorMinRating(Number(e.target.value))}
+                        >
+                            <option value={0}>Any Rating</option>
+                            <option value={3}>3+ Stars</option>
+                            <option value={4}>4+ Stars</option>
+                            <option value={5}>5 Stars</option>
+                        </select>
+                        <ChevronRight className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 rotate-90" size={12} />
+                    </div>
+                 </div>
+
+                 {/* Search Input */}
+                 <div className="relative mb-4">
+                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                     <input 
+                         className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none shadow-sm transition-all"
+                         placeholder="Try 'Catering', 'Decor', 'Music'..."
+                         value={vendorSearchQuery}
+                         onChange={(e) => setVendorSearchQuery(e.target.value)}
+                     />
+                 </div>
+
+                 {/* Category Filters/Chips */}
+                 <div className="flex space-x-2 mb-4 overflow-x-auto scrollbar-hide">
+                     {['All', 'Venue', 'Catering', 'Decor', 'Organizer'].map(cat => (
+                         <button 
+                            key={cat}
+                            onClick={() => setVendorSearchQuery(cat === 'All' ? '' : cat)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
+                                (cat === 'All' && !vendorSearchQuery) || vendorSearchQuery.includes(cat) 
+                                ? 'bg-blue-600 text-white shadow-md shadow-blue-200' 
+                                : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                            }`}
+                         >
+                             {cat}
+                         </button>
+                     ))}
+                 </div>
+
+                 {/* Results List */}
+                 <div className="space-y-4">
+                     {filteredVendors.length > 0 ? filteredVendors.map(vendor => (
+                         <div key={vendor.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex space-x-4">
+                             <img src={vendor.imageUrl} alt={vendor.name} className="w-20 h-20 rounded-lg object-cover bg-gray-100" />
+                             <div className="flex-1 min-w-0">
+                                 <div className="flex justify-between items-start">
+                                     <h4 className="font-bold text-gray-900 truncate">{vendor.name}</h4>
+                                     <div className="flex items-center bg-yellow-50 px-1.5 py-0.5 rounded text-xs font-bold text-yellow-700">
+                                         <Star size={10} fill="currentColor" className="mr-1" />
+                                         {vendor.rating}
+                                     </div>
+                                 </div>
+                                 <p className="text-xs text-blue-600 font-medium mb-1">{vendor.type}</p>
+                                 <div className="flex flex-col text-xs text-gray-500 mb-2">
+                                     <div className="flex items-center mb-0.5">
+                                         <MapPin size={12} className="mr-1" />
+                                         <span className="truncate">{vendor.address}</span>
+                                     </div>
+                                     <span className="ml-4 text-gray-400">Pincode: {vendor.pincode} • {vendor.distance}</span>
+                                 </div>
+                                 <button className="text-xs bg-gray-900 text-white px-3 py-1.5 rounded-lg font-bold flex items-center space-x-1 hover:bg-gray-800 transition-colors">
+                                     <PhoneCall size={12} />
+                                     <span>Contact</span>
+                                 </button>
+                             </div>
+                         </div>
+                     )) : (
+                         <div className="text-center py-8 text-gray-400">
+                             <p>No suppliers found matching your criteria.</p>
+                             {(vendorPincode || vendorMinRating > 0) && <p className="text-xs mt-1">Try clearing filters.</p>}
+                         </div>
+                     )}
+                 </div>
+             </div>
+        </div>
+     );
+  };
 
   const renderGiftFlow = () => {
     if (selectedGiftFriend) {
@@ -2010,6 +2324,8 @@ const App: React.FC = () => {
 
         {view === 'CIRCLE_DETAIL' && renderCircleDetail()}
 
+        {view === 'EVENT_DETAIL' && renderEventDetail()}
+
         {view === 'PROFILE' && selectedFriendId && (
           <>
              <div className="px-4 mb-6">
@@ -2221,6 +2537,15 @@ const App: React.FC = () => {
             onCreate={handleCreateCircle}
             friends={friends}
           />
+      )}
+
+      {showEventInviteModal && viewingEventId && (
+        <EventInviteModal 
+          friends={friends}
+          existingInviteeIds={events.find(e => e.id === viewingEventId)?.inviteeIds || []}
+          onClose={() => setShowEventInviteModal(false)}
+          onSave={handleUpdateEventInvites}
+        />
       )}
 
       {contributingItem && (

@@ -1,6 +1,6 @@
 
 
-import { User, WishlistItem, Event, EventType, FriendRequest, GiftCircle } from './types.ts';
+import { User, WishlistItem, Event, EventType, FriendRequest, GiftCircle, Vendor } from './types.ts';
 
 export const MOCK_CURRENT_USER_ID = 'u1';
 
@@ -109,7 +109,8 @@ export const INITIAL_EVENTS: Event[] = [
     title: "Alex's 30th Birthday",
     date: '2024-11-15',
     description: "Turning the big 3-0! Join me for drinks.",
-    type: EventType.BIRTHDAY
+    type: EventType.BIRTHDAY,
+    inviteeIds: ['u2', 'u3']
   },
   {
     id: 'e2',
@@ -117,7 +118,8 @@ export const INITIAL_EVENTS: Event[] = [
     title: "Sarah's Housewarming",
     date: '2024-10-20',
     description: "Finally got my own place.",
-    type: EventType.HOUSEWARMING
+    type: EventType.HOUSEWARMING,
+    inviteeIds: ['u1']
   }
 ];
 
@@ -197,4 +199,62 @@ export const INITIAL_FRIEND_REQUESTS: FriendRequest[] = [
     status: 'PENDING',
     timestamp: Date.now() - 86400000 // Yesterday
   }
+];
+
+export const MOCK_VENDORS: Vendor[] = [
+    {
+        id: 'v1',
+        name: 'Royal Party Supplies',
+        type: 'Supplier',
+        rating: 4.8,
+        reviews: 124,
+        address: '123 Event Street, Downtown',
+        pincode: '110001',
+        imageUrl: 'https://picsum.photos/seed/party1/200/200',
+        distance: '0.5 km'
+    },
+    {
+        id: 'v2',
+        name: 'Elegant Events Planning',
+        type: 'Organizer',
+        rating: 4.9,
+        reviews: 89,
+        address: '456 Celebration Ave',
+        pincode: '110002',
+        imageUrl: 'https://picsum.photos/seed/planner/200/200',
+        distance: '1.2 km'
+    },
+    {
+        id: 'v3',
+        name: 'Tasty Bites Catering',
+        type: 'Catering',
+        rating: 4.6,
+        reviews: 210,
+        address: '78 Foodie Lane',
+        pincode: '110001',
+        imageUrl: 'https://picsum.photos/seed/food/200/200',
+        distance: '2.5 km'
+    },
+    {
+        id: 'v4',
+        name: 'Balloon Magic',
+        type: 'Decor',
+        rating: 3.5,
+        reviews: 56,
+        address: '90 Pop Road',
+        pincode: '110003',
+        imageUrl: 'https://picsum.photos/seed/balloon/200/200',
+        distance: '3.0 km'
+    },
+    {
+        id: 'v5',
+        name: 'Grand Banquet Hall',
+        type: 'Venue',
+        rating: 4.2,
+        reviews: 340,
+        address: '100 Main St',
+        pincode: '110005',
+        imageUrl: 'https://picsum.photos/seed/hall/200/200',
+        distance: '0.8 km'
+    }
 ];
