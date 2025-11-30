@@ -71,6 +71,7 @@ export interface User {
   firstName: string;
   lastName: string;
   name: string; // Computed or display name
+  email?: string;
   age?: number;
   sex?: 'Male' | 'Female' | 'Other';
   phoneNumber?: string;

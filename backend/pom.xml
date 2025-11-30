@@ -9,30 +9,18 @@
 		<relativePath/>
 	</parent>
 	<groupId>com.giftcircle</groupId>
-	<artifactId>backend</artifactId>
+	<artifactId>giftcircle-parent</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>giftcircle-backend</name>
-	<description>Backend for GiftCircle</description>
+	<packaging>pom</packaging>
+	<name>giftcircle-parent</name>
+	<description>Parent POM for GiftCircle Microservices</description>
+	
+    <modules>
+        <module>auth-service</module>
+        <module>core-service</module>
+    </modules>
+
 	<properties>
 		<java.version>17</java.version>
 	</properties>
-	<dependencies>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.projectlombok</groupId>
-			<artifactId>lombok</artifactId>
-			<optional>true</optional>
-		</dependency>
-	</dependencies>
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
-		</plugins>
-	</build>
 </project>
