@@ -2,6 +2,8 @@
 
 import { User, WishlistItem, Event, EventType, FriendRequest, GiftCircle, Vendor } from './types.ts';
 
+export const USE_MOCK_DATA = true;
+
 export const MOCK_CURRENT_USER_ID = 'u1';
 
 export const MOCK_USERS: User[] = [

@@ -1552,63 +1552,52 @@ const App: React.FC = () => {
 
   // Re-use rendering logic for others
   const renderGiftFlow = () => {
-    // ... same as before
     if (selectedGiftFriend) {
         const friend = getUser(selectedGiftFriend);
+        const friendEvents = events.filter(e => e.userId === selectedGiftFriend);
+        const friendWishlist = wishlist.filter(w => w.userId === selectedGiftFriend && w.status === 'ACTIVE' && !w.circleId);
+        
         return (
-            <div className="px-4 animate-in fade-in slide-in-from-right duration-300">
-                <button 
-                    onClick={() => setSelectedGiftFriend(null)} 
-                    className="flex items-center text-gray-600 mb-6 hover:text-brand-600"
-                >
-                    <ArrowLeft size={20} className="mr-2" /> Back to Search
-                </button>
+            <div className="pb-24 animate-in fade-in slide-in-from-right duration-300">
+                 <div className="px-4 mb-6">
+                    <button 
+                        onClick={() => setSelectedGiftFriend(null)} 
+                        className="flex items-center text-gray-600 mb-4 hover:text-brand-600"
+                    >
+                        <ArrowLeft size={20} className="mr-2" /> Back to Search
+                    </button>
 
-                <div className="flex items-center space-x-4 mb-8">
-                    <img src={friend?.avatar} alt={friend?.name} className="w-16 h-16 rounded-full border-2 border-brand-100" />
-                    <div>
-                        <h2 className="text-xl font-bold text-gray-900">Contribute to {friend?.firstName}</h2>
-                        <p className="text-gray-500 text-sm">Select an item to contribute to</p>
+                    <div className="flex items-center space-x-4">
+                        <img src={friend?.avatar} alt={friend?.name} className="w-20 h-20 rounded-full border-4 border-white shadow-md" />
+                        <div>
+                            <h2 className="text-2xl font-bold text-gray-900">Contribute to {friend?.firstName}</h2>
+                            <p className="text-gray-500 text-sm">Select an event or item to support</p>
+                        </div>
                     </div>
                 </div>
 
-                {giftFriendItems.length > 0 ? (
-                    <div className="space-y-4">
-                        {giftFriendItems.map(item => {
-                            const progress = Math.min((item.fundedAmount / item.price) * 100, 100);
-                            const remaining = item.price - item.fundedAmount;
-                            return (
-                                <div 
-                                    key={item.id} 
-                                    onClick={() => setViewingItemId(item.id)}
-                                    className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                                >
-                                    <img src={item.imageUrl} alt={item.title} className="w-20 h-20 rounded-lg object-cover bg-gray-100" />
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="font-bold text-gray-900 truncate">{item.title}</h3>
-                                        <div className="flex items-center text-xs text-gray-500 my-1">
-                                            <span className="font-medium text-brand-600 mr-2">{currencySymbol}{remaining} needed</span>
-                                            <div className="flex-1 bg-gray-100 rounded-full h-1.5 max-w-[100px]">
-                                                <div className="bg-brand-500 h-1.5 rounded-full" style={{ width: `${progress}%` }}></div>
-                                            </div>
-                                        </div>
-                                        <button 
-                                            onClick={(e) => { e.stopPropagation(); setContributingItem(item); }}
-                                            className="mt-2 text-sm bg-gray-900 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-800 transition-colors w-full sm:w-auto flex justify-center items-center"
-                                        >
-                                            <DollarSign size={14} className="mr-1" /> Contribute
-                                        </button>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                ) : (
-                    <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200">
-                        <Gift size={48} className="mx-auto text-gray-300 mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900">No active wishes</h3>
-                    </div>
-                )}
+                {/* Show Events */}
+                {renderEvents(friendEvents)}
+
+                {/* Show Wishlist Grid */}
+                <div className="px-4">
+                    <h3 className="font-bold text-gray-800 mb-4 flex items-center">
+                        <Gift size={18} className="mr-2 text-brand-500"/>
+                        Their Wishlist
+                    </h3>
+                    
+                    {friendWishlist.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            {friendWishlist.map(item => renderWishlistItem(item, false))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200">
+                            <Gift size={48} className="mx-auto text-gray-300 mb-4" />
+                            <h3 className="text-lg font-medium text-gray-900">No active wishes</h3>
+                            <p className="text-gray-400 text-sm">They haven't added any wishes yet.</p>
+                        </div>
+                    )}
+                </div>
             </div>
         );
     }
