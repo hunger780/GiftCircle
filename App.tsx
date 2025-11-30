@@ -1,10 +1,11 @@
-import React, { useState, useMemo, useEffect } from 'react';
+
+
+import React, { useState, useMemo } from 'react';
 import { Home, Users, PlusCircle, User as UserIcon, Gift, ExternalLink, Calendar, Share2, Search, ArrowLeft, DollarSign, LogOut, Cake, Heart, Baby, PartyPopper, Home as HomeIcon, Settings, Save, Trash2, CheckCircle, Circle, X, ShoppingBag, AlertCircle, Wallet, Landmark, CreditCard, RefreshCcw, Archive, ChevronRight, Lock, Unlock, Phone, UserPlus, Clock, Check, XCircle, Copy, Contact, Ban, MessageCircle, Target, Link as LinkIcon, PenTool, Loader2, MapPin, Star, PhoneCall, Mail, Filter } from 'lucide-react';
 import { WishlistItem, User, ContributionType, ViewState, Event, EventType, WishlistStatus, FriendRequest, GiftCircle, Vendor } from './types.ts';
-import { MOCK_USERS, MOCK_CURRENT_USER_ID, INITIAL_FRIEND_REQUESTS, INITIAL_CIRCLES, MOCK_VENDORS } from './constants.ts';
+import { MOCK_USERS, INITIAL_WISHLIST, MOCK_CURRENT_USER_ID, INITIAL_EVENTS, INITIAL_FRIEND_REQUESTS, INITIAL_CIRCLES, MOCK_VENDORS } from './constants.ts';
 import { ContributionModal } from './components/ContributionModal.tsx';
 import { WishDetailModal } from './components/WishDetailModal.tsx';
-import { api } from './services/api.ts';
 
 // Helper for Currency
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -579,76 +580,64 @@ const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [view, setView] = useState<ViewState>('HOME');
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [loading, setLoading] = useState(false);
   
-  const [currentUserData, setCurrentUserData] = useState<User>(MOCK_USERS[0]);
-  const [users, setUsers] = useState<User[]>(MOCK_USERS);
-  const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
-  const [events, setEvents] = useState<Event[]>([]);
+  const [currentUserData, setCurrentUserData] = useState<User>(() => {
+     return MOCK_USERS.find(u => u.id === MOCK_CURRENT_USER_ID)!;
+  });
+
+  const [wishlist, setWishlist] = useState<WishlistItem[]>(INITIAL_WISHLIST);
+  const [events, setEvents] = useState<Event[]>(INITIAL_EVENTS);
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>(INITIAL_FRIEND_REQUESTS);
   const [circles, setCircles] = useState<GiftCircle[]>(INITIAL_CIRCLES);
   
-  // Initialize Data from Backend on Load
-  useEffect(() => {
-    const fetchData = async () => {
-        setLoading(true);
-        // Fallback or Initial Data fetch
-        const fetchedUsers = await api.users.getAll();
-        const fetchedWishlist = await api.wishlist.getAll();
-        const fetchedEvents = await api.events.getAll();
-
-        setUsers(fetchedUsers);
-        setWishlist(fetchedWishlist);
-        setEvents(fetchedEvents);
-
-        // Assume logged in as first user for demo if valid
-        if (fetchedUsers.length > 0) {
-            setCurrentUserData(fetchedUsers[0]);
-        }
-        setLoading(false);
-    };
-    fetchData();
-  }, []);
-
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
   const [contributingItem, setContributingItem] = useState<WishlistItem | null>(null);
   const [showAddFriendModal, setShowAddFriendModal] = useState(false);
   const [showCreateCircleModal, setShowCreateCircleModal] = useState(false);
   const [activeCircleId, setActiveCircleId] = useState<string | null>(null);
   
+  // New state for viewing details
   const [viewingItemId, setViewingItemId] = useState<string | null>(null);
   const [viewingEventId, setViewingEventId] = useState<string | null>(null);
   const [showEventInviteModal, setShowEventInviteModal] = useState(false);
   
+  // Wishlist Tab State
   const [wishlistTab, setWishlistTab] = useState<WishlistStatus>('ACTIVE');
+  
+  // Friend View Tab State
   const [friendsViewTab, setFriendsViewTab] = useState<'FRIENDS' | 'CIRCLES'>('FRIENDS');
 
+  // Gift Flow State
   const [giftSearch, setGiftSearch] = useState('');
   const [selectedGiftFriend, setSelectedGiftFriend] = useState<string | null>(null);
 
+  // Wallet State
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   
+  // Adding Item State
   const [addingItemToCircleId, setAddingItemToCircleId] = useState<string | null>(null);
   const [addItemMethod, setAddItemMethod] = useState<'LINK' | 'MANUAL'>('LINK');
   const [itemDraft, setItemDraft] = useState({ title: '', price: '', url: '', description: '', eventId: '' });
   const [isSimulatingFetch, setIsSimulatingFetch] = useState(false);
 
+  // Vendor Search State
   const [vendorSearchQuery, setVendorSearchQuery] = useState('');
   const [vendorPincode, setVendorPincode] = useState('');
   const [vendorMinRating, setVendorMinRating] = useState<number>(0);
 
+
   const getUser = (id: string) => {
     if (id === currentUserData.id) return currentUserData;
-    return users.find(u => u.id === id);
+    return MOCK_USERS.find(u => u.id === id);
   };
   
   const me = currentUserData;
-  const currencySymbol = me.settings ? getCurrencySymbol(me.settings.currency) : '$';
+  const currencySymbol = getCurrencySymbol(me.settings.currency);
 
   // Computed data
   const friends = useMemo(() => 
-    users.filter(u => me.friends?.includes(u.id)), 
-  [me, users]);
+    MOCK_USERS.filter(u => me.friends.includes(u.id)), 
+  [me]);
 
   const filteredFriends = useMemo(() => {
     if (!giftSearch) return friends;
@@ -662,9 +651,11 @@ const App: React.FC = () => {
 
   const displayedWishlist = useMemo(() => {
     if (view === 'PROFILE' && selectedFriendId) {
+      // When viewing a friend, only show Active items
       return wishlist.filter(w => w.userId === selectedFriendId && w.status === 'ACTIVE' && !w.circleId);
     }
     if (view === 'HOME') {
+      // My wishlist supports tabs, exclude circle items from main list to avoid clutter
       return wishlist.filter(w => w.userId === me.id && w.status === wishlistTab && !w.circleId);
     }
     return [];
@@ -679,10 +670,12 @@ const App: React.FC = () => {
     return events.filter(e => e.userId === me.id);
   }, [events, me.id]);
 
+  // Derived Viewing Item
   const activeViewingItem = useMemo(() => {
     return wishlist.find(item => item.id === viewingItemId) || null;
   }, [wishlist, viewingItemId]);
 
+  // Friend Request Lists
   const incomingRequests = useMemo(() => {
       return friendRequests.filter(req => req.toUserId === me.id && req.status === 'PENDING');
   }, [friendRequests, me.id]);
@@ -691,23 +684,30 @@ const App: React.FC = () => {
       return friendRequests.filter(req => req.fromUserId === me.id && req.status === 'PENDING');
   }, [friendRequests, me.id]);
 
+  // Filter Vendors
   const filteredVendors = useMemo(() => {
     return MOCK_VENDORS.filter(v => {
+      // Name/Type search
       const matchesSearch = !vendorSearchQuery || 
         v.name.toLowerCase().includes(vendorSearchQuery.toLowerCase()) || 
         v.type.toLowerCase().includes(vendorSearchQuery.toLowerCase());
       
+      // Pincode Search (startswith)
       const matchesPincode = !vendorPincode || v.pincode.startsWith(vendorPincode);
+      
+      // Rating Filter
       const matchesRating = v.rating >= vendorMinRating;
 
       return matchesSearch && matchesPincode && matchesRating;
     });
   }, [vendorSearchQuery, vendorPincode, vendorMinRating]);
 
+  // Calculate Wallet Balances
   const walletBalance = useMemo(() => {
     let available = 0;
     let locked = 0;
 
+    // Iterate over ALL my items (active or cancelled) to count contributions
     const myItems = wishlist.filter(w => w.userId === me.id);
     
     myItems.forEach(item => {
@@ -723,6 +723,7 @@ const App: React.FC = () => {
     return { available, locked };
   }, [wishlist, me.id]);
 
+  // NEW: Calculate Recent Transactions
   const recentTransactions = useMemo(() => {
     const myItems = wishlist.filter(w => w.userId === me.id);
     const txs: {
@@ -752,27 +753,14 @@ const App: React.FC = () => {
 
 
   // Handlers
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    const form = e.target as HTMLFormElement;
-    const email = (form.elements.namedItem('email') as HTMLInputElement).value;
-    const password = (form.elements.namedItem('password') as HTMLInputElement).value;
-
-    const result = await api.auth.login(email, password);
-    if (result.user) {
-        setCurrentUserData(result.user);
-        setIsLoggedIn(true);
-        setShowOnboarding(true); 
-        setView('HOME');
-    } else {
-        alert("Login failed. Using demo user.");
-        // Fallback for demo if API isn't running
-        setIsLoggedIn(true);
-        setView('HOME');
-    }
+    setIsLoggedIn(true);
+    setShowOnboarding(true); // Show onboarding on login for demo
+    setView('HOME');
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
@@ -785,7 +773,6 @@ const App: React.FC = () => {
       age: Number(formData.get('age')),
       sex: formData.get('sex') as any,
       phoneNumber: formData.get('phoneNumber') as string,
-      email: formData.get('email') as string,
       avatar: `https://ui-avatars.com/api/?name=${formData.get('firstName')}+${formData.get('lastName')}&background=random`,
       friends: [],
       blockedUserIds: [],
@@ -793,9 +780,7 @@ const App: React.FC = () => {
       settings: { defaultGiftAmount: 20, maxGiftAmount: 200, currency: 'INR', autoAcceptContacts: false }
     };
 
-    const createdUser = await api.users.create(newUser);
-    setCurrentUserData(createdUser);
-    setUsers([...users, createdUser]);
+    setCurrentUserData(newUser);
     setIsLoggedIn(true);
     setShowOnboarding(true);
     setView('HOME');
@@ -807,7 +792,7 @@ const App: React.FC = () => {
     setShowOnboarding(false);
   };
 
-  const handleContribute = async (amount: number, type: ContributionType, isAnonymous: boolean, isAmountHidden: boolean) => {
+  const handleContribute = (amount: number, type: ContributionType, isAnonymous: boolean, isAmountHidden: boolean) => {
     if (!contributingItem) return;
 
     const newContribution = {
@@ -820,23 +805,23 @@ const App: React.FC = () => {
       isAmountHidden
     };
 
-    const updatedItem = {
-        ...contributingItem,
-        fundedAmount: contributingItem.fundedAmount + amount,
-        contributions: [...contributingItem.contributions, newContribution]
-    };
-
-    // Update in backend
-    await api.wishlist.update(updatedItem);
-
-    // Update local state
-    setWishlist(prev => prev.map(item => item.id === contributingItem.id ? updatedItem : item));
+    setWishlist(prev => prev.map(item => {
+      if (item.id === contributingItem.id) {
+        return {
+          ...item,
+          fundedAmount: item.fundedAmount + amount,
+          contributions: [...item.contributions, newContribution]
+        };
+      }
+      return item;
+    }));
     setContributingItem(null);
   };
 
   const handleFetchItemDetails = () => {
     if (!itemDraft.url) return;
     setIsSimulatingFetch(true);
+    // Simulate API delay
     setTimeout(() => {
         setItemDraft(prev => ({
             ...prev,
@@ -844,12 +829,12 @@ const App: React.FC = () => {
             price: '249',
             description: "Automatically fetched description for the product link."
         }));
-        setAddItemMethod('MANUAL');
+        setAddItemMethod('MANUAL'); // Switch to manual view to show filled details
         setIsSimulatingFetch(false);
     }, 1500);
   };
 
-  const handleAddItem = async (e: React.FormEvent) => {
+  const handleAddItem = (e: React.FormEvent) => {
     e.preventDefault();
     
     const newItem: WishlistItem = {
@@ -862,14 +847,13 @@ const App: React.FC = () => {
       imageUrl: `https://picsum.photos/seed/${Date.now()}/300/300`,
       productUrl: itemDraft.url,
       eventId: itemDraft.eventId || undefined,
-      circleId: addingItemToCircleId || undefined,
+      circleId: addingItemToCircleId || undefined, // Link to circle if adding from circle
       contributions: [],
       status: 'ACTIVE'
     };
-
-    const savedItem = await api.wishlist.create(newItem);
-    setWishlist([...wishlist, savedItem]);
+    setWishlist([...wishlist, newItem]);
     
+    // Reset Draft
     setItemDraft({ title: '', price: '', url: '', description: '', eventId: '' });
     setAddItemMethod('LINK');
 
@@ -881,14 +865,14 @@ const App: React.FC = () => {
     }
   };
 
-  const handleCancelItem = async (itemId: string) => {
+  const handleCancelItem = (itemId: string) => {
       if (window.confirm('Are you sure you want to cancel this wish? Any "Locked" funds will remain locked to this item, but "Free" funds can be withdrawn.')) {
-          const item = wishlist.find(i => i.id === itemId);
-          if (item) {
-             const updatedItem = { ...item, status: 'CANCELLED' as WishlistStatus };
-             await api.wishlist.update(updatedItem);
-             setWishlist(prev => prev.map(i => i.id === itemId ? updatedItem : i));
-          }
+          setWishlist(prev => prev.map(item => {
+              if (item.id === itemId) {
+                  return { ...item, status: 'CANCELLED' };
+              }
+              return item;
+          }));
       }
   };
 
@@ -906,6 +890,7 @@ const App: React.FC = () => {
 
       setEvents([...events, newEvent]);
 
+      // Update existing items with new event ID
       const updatedWishlist = wishlist.map(item => {
           if (selectedIds.includes(item.id)) {
               return { ...item, eventId: newEventId };
@@ -913,6 +898,7 @@ const App: React.FC = () => {
           return item;
       });
 
+      // Create new items linked to this event
       const createdItems: WishlistItem[] = newItems.map((item, idx) => ({
           id: `nw${Date.now()}-${idx}`,
           userId: me.id,
@@ -998,12 +984,12 @@ const App: React.FC = () => {
   };
 
   const handleSendFriendRequest = (id: string) => {
-      const targetUser = users.find(u => u.id === id);
+      const targetUser = MOCK_USERS.find(u => u.id === id);
       if (!targetUser) {
           alert("User not found!");
           return;
       }
-      if (me.friends?.includes(id)) {
+      if (me.friends.includes(id)) {
           alert("Already friends!");
           return;
       }
@@ -1041,7 +1027,7 @@ const App: React.FC = () => {
       if (isAutoAccepted) {
           setCurrentUserData({
               ...me,
-              friends: [...(me.friends || []), id]
+              friends: [...me.friends, id]
           });
           alert(`You are now friends with ${targetUser.name}! (Auto-accepted via contacts)`);
       } else {
@@ -1059,7 +1045,7 @@ const App: React.FC = () => {
 
       setCurrentUserData({
           ...me,
-          friends: [...(me.friends || []), req.fromUserId]
+          friends: [...me.friends, req.fromUserId]
       });
   };
 
@@ -1071,7 +1057,7 @@ const App: React.FC = () => {
     if (window.confirm("Are you sure you want to block this user? They will be removed from your friends list and requests.")) {
        setCurrentUserData(prev => ({
            ...prev,
-           friends: prev.friends?.filter(fid => fid !== id) || [],
+           friends: prev.friends.filter(fid => fid !== id),
            blockedUserIds: [...prev.blockedUserIds, id]
        }));
        setFriendRequests(prev => prev.filter(req => 
@@ -1086,19 +1072,19 @@ const App: React.FC = () => {
           name,
           description,
           adminId: me.id,
-          memberIds: [...memberIds, me.id],
+          memberIds: [...memberIds, me.id], // Include creator
           createdTimestamp: Date.now()
       };
       setCircles([...circles, newCircle]);
       setShowCreateCircleModal(false);
       setActiveCircleId(newCircle.id);
       setView('CIRCLE_DETAIL');
-      setFriendsViewTab('CIRCLES');
+      setFriendsViewTab('CIRCLES'); // Switch tab so when they go back they see it
   };
 
   const handleAddCircleGoal = (circleId: string) => {
       setAddingItemToCircleId(circleId);
-      setAddItemMethod('LINK');
+      setAddItemMethod('LINK'); // Default to link
       setView('ADD_ITEM');
   };
 
@@ -1107,6 +1093,7 @@ const App: React.FC = () => {
       setView('EVENT_DETAIL');
   };
 
+  // Render Components
   const renderLogin = () => (
     <div className="min-h-screen bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center p-4">
       <div className="bg-white w-full max-w-md p-8 rounded-3xl shadow-2xl animate-in fade-in zoom-in duration-500">
@@ -1122,7 +1109,6 @@ const App: React.FC = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <input 
-              name="email"
               type="email" 
               defaultValue="alex@example.com"
               className="w-full p-4 bg-gray-50 rounded-xl border-2 border-transparent focus:border-brand-500 focus:bg-white transition-all outline-none"
@@ -1132,7 +1118,6 @@ const App: React.FC = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
             <input 
-              name="password"
               type="password" 
               defaultValue="password"
               className="w-full p-4 bg-gray-50 rounded-xl border-2 border-transparent focus:border-brand-500 focus:bg-white transition-all outline-none"
@@ -1217,9 +1202,6 @@ const App: React.FC = () => {
     </div>
   );
 
-  // ... (Rest of render methods like renderHeader, renderNav, renderWishlistItem, etc. remain largely the same but use state variables)
-  // To save space, I'm including the full component structure but reusing the logic defined above.
-
   const renderHeader = () => (
     <header className="bg-white sticky top-0 z-10 border-b px-4 py-3 flex justify-between items-center shadow-sm">
       <h1 className="text-xl font-extrabold bg-gradient-to-r from-brand-600 to-purple-600 bg-clip-text text-transparent">
@@ -1287,7 +1269,7 @@ const App: React.FC = () => {
           <img src={item.imageUrl} alt={item.title} className={`w-full h-full object-cover ${isCancelled ? 'grayscale' : ''}`} />
           {relatedEvent && !isCancelled && (
             <div className="absolute top-2 right-2 bg-white/90 backdrop-blur text-brand-700 text-xs px-2 py-1 rounded-full flex items-center shadow-md font-bold">
-              <span className="mr-1">{getEventIcon(relatedEvent.type as EventType)}</span>
+              <span className="mr-1">{getEventIcon(relatedEvent.type)}</span>
               {relatedEvent.title}
             </div>
           )}
@@ -1346,18 +1328,24 @@ const App: React.FC = () => {
                   </button>
                </div>
             )}
+            {isOwn && isCancelled && (
+               <div className="p-3 bg-gray-50 rounded-lg text-center text-xs text-gray-500">
+                  Product cancelled. Active funds moved to wallet.
+               </div>
+            )}
+            {!isOwn && item.fundedAmount >= item.price && (
+               <button disabled className="w-full bg-green-100 text-green-700 py-3 rounded-xl font-semibold">
+                 Fully Funded!
+               </button>
+            )}
           </div>
         </div>
       </div>
     );
   };
-  
-  // Reuse renderEvents, renderEventDetail, renderGiftFlow, renderCircleDetail, renderWallet, renderMyProfile, renderSettings from previous code
-  // I will assume their content is similar but uses the state variables `users`, `events`, `wishlist` instead of constants directly where possible.
-  // For brevity, I am not repeating the *entire* 1000 lines of UI code if it's identical logic, but providing the complete App export.
-  
-  // However, I must ensure the `renderEvents` etc are present.
-  const renderEvents = (eventList: Event[]) => (
+
+  const renderEvents = (events: Event[]) => {
+    return (
         <div className="mb-8">
             <div className="flex justify-between items-center px-4 mb-4">
                <h2 className="text-lg font-bold text-gray-800">Upcoming Events</h2>
@@ -1371,19 +1359,19 @@ const App: React.FC = () => {
                )}
             </div>
             
-            {eventList.length > 0 ? (
+            {events.length > 0 ? (
               <div className="flex overflow-x-auto px-4 space-x-4 pb-4 scrollbar-hide">
-                  {eventList.map(e => (
+                  {events.map(e => (
                       <div 
                         key={e.id} 
                         onClick={() => handleEventClick(e.id)}
                         className="flex-shrink-0 w-64 bg-gradient-to-br from-brand-600 to-purple-600 rounded-2xl p-4 text-white shadow-lg relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:scale-[1.02]"
                       >
                           <div className="absolute top-0 right-0 p-4 opacity-10">
-                            {getEventIcon(e.type as EventType)}
+                            {getEventIcon(e.type)}
                           </div>
                           <div className="flex items-center space-x-2 text-purple-200 text-sm font-medium mb-2">
-                             {getEventIcon(e.type as EventType)}
+                             {getEventIcon(e.type)}
                              <span>{new Date(e.date).toLocaleDateString()}</span>
                           </div>
                           <h3 className="font-bold text-xl mb-2 leading-tight">{e.title}</h3>
@@ -1403,7 +1391,8 @@ const App: React.FC = () => {
               </div>
             )}
         </div>
-  );
+    )
+  }
 
   const renderEventDetail = () => {
      const event = events.find(e => e.id === viewingEventId);
@@ -1420,24 +1409,25 @@ const App: React.FC = () => {
                 </button>
                 <h2 className="text-xl font-bold text-gray-800 ml-2">Event Details</h2>
              </div>
-             {/* ... Header ... */}
+
+             {/* Event Header */}
              <div className="bg-gradient-to-br from-brand-600 to-purple-600 rounded-2xl p-6 text-white shadow-lg mb-8 relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-8 opacity-10 scale-150">
-                    {getEventIcon(event.type as EventType)}
+                    {getEventIcon(event.type)}
                   </div>
                   <div className="flex items-center space-x-2 mb-2 bg-white/20 w-fit px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">
-                      {getEventIcon(event.type as EventType)}
+                      {getEventIcon(event.type)}
                       <span>{event.type}</span>
                   </div>
                   <h1 className="text-3xl font-extrabold mb-2">{event.title}</h1>
                   <p className="text-purple-100 text-lg mb-4 flex items-center">
                       <Calendar size={18} className="mr-2" />
-                      {new Date(event.date).toLocaleDateString()}
+                      {new Date(event.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                   </p>
                   <p className="opacity-90 leading-relaxed">{event.description}</p>
              </div>
 
-             {/* Guest List */}
+            {/* Guest List Section */}
              <div className="mb-8 bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="font-bold text-gray-800 flex items-center">
@@ -1453,11 +1443,21 @@ const App: React.FC = () => {
                     </button>
                   )}
                 </div>
+                
                 {invitees.length > 0 ? (
                   <div className="flex -space-x-3 overflow-x-auto pb-2 scrollbar-hide px-2">
                      {invitees.map(user => (
-                       <img key={user!.id} src={user!.avatar} className="w-10 h-10 rounded-full border-2 border-white shadow-sm" />
+                       <img 
+                          key={user!.id} 
+                          src={user!.avatar} 
+                          alt={user!.name} 
+                          title={user!.name}
+                          className="w-10 h-10 rounded-full border-2 border-white shadow-sm" 
+                       />
                      ))}
+                     <div className="w-10 h-10 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-gray-500 font-medium">
+                       ...
+                     </div>
                   </div>
                 ) : (
                   <p className="text-sm text-gray-400 italic">No guests invited yet.</p>
@@ -1481,26 +1481,28 @@ const App: React.FC = () => {
                         ))}
                     </div>
                  ) : (
-                    <p className="text-sm text-gray-500 italic">No wishes linked.</p>
+                    <p className="text-sm text-gray-500 italic">No wishes linked to this event yet.</p>
                  )}
              </div>
-             
-             {/* Vendor Search Partial */}
-             <div className="flex items-center space-x-2 mb-4">
-                 <div className="bg-blue-100 p-2 rounded-lg text-blue-600">
-                     <Search size={20} />
+
+             {/* Supplier Search Section */}
+             <div>
+                 <div className="flex items-center space-x-2 mb-4">
+                     <div className="bg-blue-100 p-2 rounded-lg text-blue-600">
+                         <Search size={20} />
+                     </div>
+                     <div>
+                         <h3 className="font-bold text-gray-800 text-lg">Find Local Suppliers</h3>
+                         <p className="text-xs text-gray-500">Search for organizers, venues & more</p>
+                     </div>
                  </div>
-                 <div>
-                     <h3 className="font-bold text-gray-800 text-lg">Find Local Suppliers</h3>
-                     <p className="text-xs text-gray-500">Search for organizers, venues & more</p>
-                 </div>
-             </div>
-             {/* Filters Row */}
+
+                 {/* Filters Row */}
                  <div className="flex space-x-2 mb-3">
                     <div className="relative flex-1">
                         <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
                         <input 
-                            className="w-full pl-8 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="w-full pl-8 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                             placeholder="Pincode"
                             value={vendorPincode}
                             onChange={(e) => setVendorPincode(e.target.value)}
@@ -1526,88 +1528,139 @@ const App: React.FC = () => {
                  <div className="relative mb-4">
                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                      <input 
-                         className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none shadow-sm transition-all"
+                         className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none shadow-sm transition-all"
                          placeholder="Try 'Catering', 'Decor', 'Music'..."
                          value={vendorSearchQuery}
                          onChange={(e) => setVendorSearchQuery(e.target.value)}
                      />
                  </div>
+
+                 {/* Category Filters/Chips */}
+                 <div className="flex space-x-2 mb-4 overflow-x-auto scrollbar-hide">
+                     {['All', 'Venue', 'Catering', 'Decor', 'Organizer'].map(cat => (
+                         <button 
+                            key={cat}
+                            onClick={() => setVendorSearchQuery(cat === 'All' ? '' : cat)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
+                                (cat === 'All' && !vendorSearchQuery) || vendorSearchQuery.includes(cat) 
+                                ? 'bg-blue-600 text-white shadow-md shadow-blue-200' 
+                                : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                            }`}
+                         >
+                             {cat}
+                         </button>
+                     ))}
+                 </div>
+
+                 {/* Results List */}
                  <div className="space-y-4">
-                     {filteredVendors.map(vendor => (
+                     {filteredVendors.length > 0 ? filteredVendors.map(vendor => (
                          <div key={vendor.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex space-x-4">
                              <img src={vendor.imageUrl} alt={vendor.name} className="w-20 h-20 rounded-lg object-cover bg-gray-100" />
                              <div className="flex-1 min-w-0">
-                                 <h4 className="font-bold text-gray-900 truncate">{vendor.name}</h4>
+                                 <div className="flex justify-between items-start">
+                                     <h4 className="font-bold text-gray-900 truncate">{vendor.name}</h4>
+                                     <div className="flex items-center bg-yellow-50 px-1.5 py-0.5 rounded text-xs font-bold text-yellow-700">
+                                         <Star size={10} fill="currentColor" className="mr-1" />
+                                         {vendor.rating}
+                                     </div>
+                                 </div>
                                  <p className="text-xs text-blue-600 font-medium mb-1">{vendor.type}</p>
                                  <div className="flex flex-col text-xs text-gray-500 mb-2">
-                                     <span className="truncate">{vendor.address}</span>
+                                     <div className="flex items-center mb-0.5">
+                                         <MapPin size={12} className="mr-1" />
+                                         <span className="truncate">{vendor.address}</span>
+                                     </div>
+                                     <span className="ml-4 text-gray-400">Pincode: {vendor.pincode} • {vendor.distance}</span>
                                  </div>
+                                 <button className="text-xs bg-gray-900 text-white px-3 py-1.5 rounded-lg font-bold flex items-center space-x-1 hover:bg-gray-800 transition-colors">
+                                     <PhoneCall size={12} />
+                                     <span>Contact</span>
+                                 </button>
                              </div>
                          </div>
-                     ))}
+                     )) : (
+                         <div className="text-center py-8 text-gray-400">
+                             <p>No suppliers found matching your criteria.</p>
+                             {(vendorPincode || vendorMinRating > 0) && <p className="text-xs mt-1">Try clearing filters.</p>}
+                         </div>
+                     )}
                  </div>
+             </div>
         </div>
      );
   };
 
-  // Re-use rendering logic for others
   const renderGiftFlow = () => {
     if (selectedGiftFriend) {
         const friend = getUser(selectedGiftFriend);
-        const friendEvents = events.filter(e => e.userId === selectedGiftFriend);
-        const friendWishlist = wishlist.filter(w => w.userId === selectedGiftFriend && w.status === 'ACTIVE' && !w.circleId);
-        
         return (
-            <div className="pb-24 animate-in fade-in slide-in-from-right duration-300">
-                 <div className="px-4 mb-6">
-                    <button 
-                        onClick={() => setSelectedGiftFriend(null)} 
-                        className="flex items-center text-gray-600 mb-4 hover:text-brand-600"
-                    >
-                        <ArrowLeft size={20} className="mr-2" /> Back to Search
-                    </button>
+            <div className="px-4 animate-in fade-in slide-in-from-right duration-300">
+                <button 
+                    onClick={() => setSelectedGiftFriend(null)} 
+                    className="flex items-center text-gray-600 mb-6 hover:text-brand-600"
+                >
+                    <ArrowLeft size={20} className="mr-2" /> Back to Search
+                </button>
 
-                    <div className="flex items-center space-x-4">
-                        <img src={friend?.avatar} alt={friend?.name} className="w-20 h-20 rounded-full border-4 border-white shadow-md" />
-                        <div>
-                            <h2 className="text-2xl font-bold text-gray-900">Contribute to {friend?.firstName}</h2>
-                            <p className="text-gray-500 text-sm">Select an event or item to support</p>
-                        </div>
+                <div className="flex items-center space-x-4 mb-8">
+                    <img src={friend?.avatar} alt={friend?.name} className="w-16 h-16 rounded-full border-2 border-brand-100" />
+                    <div>
+                        <h2 className="text-xl font-bold text-gray-900">Contribute to {friend?.firstName}</h2>
+                        <p className="text-gray-500 text-sm">Select an item to contribute to</p>
                     </div>
                 </div>
 
-                {/* Show Events */}
-                {renderEvents(friendEvents)}
-
-                {/* Show Wishlist Grid */}
-                <div className="px-4">
-                    <h3 className="font-bold text-gray-800 mb-4 flex items-center">
-                        <Gift size={18} className="mr-2 text-brand-500"/>
-                        Their Wishlist
-                    </h3>
-                    
-                    {friendWishlist.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            {friendWishlist.map(item => renderWishlistItem(item, false))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200">
-                            <Gift size={48} className="mx-auto text-gray-300 mb-4" />
-                            <h3 className="text-lg font-medium text-gray-900">No active wishes</h3>
-                            <p className="text-gray-400 text-sm">They haven't added any wishes yet.</p>
-                        </div>
-                    )}
-                </div>
+                {giftFriendItems.length > 0 ? (
+                    <div className="space-y-4">
+                        {giftFriendItems.map(item => {
+                            const progress = Math.min((item.fundedAmount / item.price) * 100, 100);
+                            const remaining = item.price - item.fundedAmount;
+                            return (
+                                <div 
+                                    key={item.id} 
+                                    onClick={() => setViewingItemId(item.id)}
+                                    className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                                >
+                                    <img src={item.imageUrl} alt={item.title} className="w-20 h-20 rounded-lg object-cover bg-gray-100" />
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="font-bold text-gray-900 truncate">{item.title}</h3>
+                                        <div className="flex items-center text-xs text-gray-500 my-1">
+                                            <span className="font-medium text-brand-600 mr-2">{currencySymbol}{remaining} needed</span>
+                                            <div className="flex-1 bg-gray-100 rounded-full h-1.5 max-w-[100px]">
+                                                <div className="bg-brand-500 h-1.5 rounded-full" style={{ width: `${progress}%` }}></div>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); setContributingItem(item); }}
+                                            className="mt-2 text-sm bg-gray-900 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-800 transition-colors w-full sm:w-auto flex justify-center items-center"
+                                        >
+                                            <DollarSign size={14} className="mr-1" /> Contribute
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200">
+                        <Gift size={48} className="mx-auto text-gray-300 mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900">No active wishes</h3>
+                        <p className="text-gray-500 mt-1">{friend?.firstName} hasn't added any wishes yet or all are funded.</p>
+                    </div>
+                )}
             </div>
         );
     }
+
     return (
         <div className="px-4">
             <div className="bg-gradient-to-r from-brand-500 to-purple-600 p-6 rounded-2xl text-white shadow-lg mb-6">
                 <h2 className="text-2xl font-bold mb-2">Contribute to a Gift</h2>
                 <p className="opacity-90">Surprise a friend by funding their wishes.</p>
             </div>
-             <div className="relative mb-6">
+
+            <div className="relative mb-6">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                 <input 
                     type="text"
@@ -1617,7 +1670,8 @@ const App: React.FC = () => {
                     onChange={(e) => setGiftSearch(e.target.value)}
                 />
             </div>
-             <div className="space-y-3">
+
+            <div className="space-y-3">
                 <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wide opacity-70 mb-2">Friends</h3>
                 {filteredFriends.length > 0 ? filteredFriends.map(friend => (
                     <button 
@@ -1628,22 +1682,32 @@ const App: React.FC = () => {
                         <img src={friend.avatar} alt={friend.name} className="w-12 h-12 rounded-full object-cover" />
                         <div className="flex-1">
                             <h4 className="font-bold text-gray-900">{friend.name}</h4>
+                            <p className="text-xs text-gray-500">Tap to view wishes</p>
                         </div>
-                         <div className="bg-brand-50 p-2 rounded-full text-brand-600">
+                        <div className="bg-brand-50 p-2 rounded-full text-brand-600">
                             <Gift size={20} />
                         </div>
                     </button>
-                )) : <div className="text-center py-8 text-gray-400">No friends found</div>}
-             </div>
+                )) : (
+                    <div className="text-center py-8 text-gray-400">
+                        No friends found matching "{giftSearch}"
+                    </div>
+                )}
+            </div>
         </div>
     );
   };
+
   const renderCircleDetail = () => {
-    // ... same as before
     const circle = circles.find(c => c.id === activeCircleId);
     if (!circle) return null;
+
     const members = circle.memberIds.map(id => getUser(id)).filter(Boolean);
     const circleItems = wishlist.filter(w => w.circleId === circle.id && w.status === 'ACTIVE');
+    const totalGoal = circleItems.reduce((acc, item) => acc + item.price, 0);
+    const totalFunded = circleItems.reduce((acc, item) => acc + item.fundedAmount, 0);
+    const progress = totalGoal > 0 ? (totalFunded / totalGoal) * 100 : 0;
+
     return (
         <div className="px-4 pb-24">
             <div className="flex items-center mb-6">
@@ -1652,29 +1716,89 @@ const App: React.FC = () => {
                 </button>
                 <div className="ml-2">
                    <h2 className="text-xl font-bold text-gray-800">{circle.name}</h2>
+                   <p className="text-xs text-gray-500">{circle.memberIds.length} members</p>
                 </div>
             </div>
-             {/* Circle Header */}
+
+            {/* Circle Header Card */}
             <div className="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-2xl p-6 text-white shadow-xl mb-8">
-                 <h3 className="text-3xl font-bold mb-2">Gift Circle</h3>
-                 <p className="text-xs opacity-80">{circle.description}</p>
+                <div className="flex justify-between items-start mb-4">
+                    <div>
+                        <p className="opacity-80 text-sm mb-1">Total Pool Progress</p>
+                        <h3 className="text-3xl font-bold">{currencySymbol}{totalFunded} <span className="text-lg opacity-70 font-normal">/ {currencySymbol}{totalGoal}</span></h3>
+                    </div>
+                    <div className="bg-white/20 p-2 rounded-lg">
+                        <Target size={24} />
+                    </div>
+                </div>
+                <div className="w-full bg-black/20 rounded-full h-2 mb-2">
+                   <div className="bg-white h-2 rounded-full transition-all duration-1000" style={{ width: `${progress}%` }} />
+                </div>
+                <p className="text-xs opacity-80">{circle.description || 'No description provided.'}</p>
             </div>
-             {/* Items */}
-             <div>
+
+            {/* Members Section */}
+            <div className="mb-8">
+               <div className="flex justify-between items-center mb-3">
+                   <h3 className="font-bold text-gray-800">Members</h3>
+                   {/* In a real app, add member functionality here */}
+                   <span className="text-xs text-brand-600 font-bold cursor-pointer">Invite +</span>
+               </div>
+               <div className="flex -space-x-2 overflow-x-auto pb-2 scrollbar-hide px-2">
+                   {members.map(member => (
+                       <img key={member!.id} src={member!.avatar} alt={member!.name} className="w-10 h-10 rounded-full border-2 border-white shadow-sm" title={member!.name} />
+                   ))}
+               </div>
+            </div>
+
+            {/* Goals / Wishes Section */}
+            <div>
                <div className="flex justify-between items-center mb-4">
                    <h3 className="font-bold text-gray-800">Circle Goal</h3>
-                   <button onClick={() => handleAddCircleGoal(circle.id)} className="text-brand-600 text-xs font-bold flex items-center bg-brand-50 px-3 py-1.5 rounded-lg">
+                   <button 
+                      onClick={() => handleAddCircleGoal(circle.id)}
+                      className="text-brand-600 text-xs font-bold flex items-center bg-brand-50 px-3 py-1.5 rounded-lg hover:bg-brand-100"
+                   >
                       <PlusCircle size={14} className="mr-1" /> Add Product
                    </button>
                </div>
-               <div className="space-y-4">
-                   {circleItems.map(item => (
-                       <div key={item.id} onClick={() => setViewingItemId(item.id)} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                           <h4 className="font-bold text-gray-900 truncate">{item.title}</h4>
-                           <button onClick={(e) => {e.stopPropagation(); setContributingItem(item)}} className="mt-2 w-full py-2 bg-gray-900 text-white rounded-lg text-sm font-bold">Contribute</button>
-                       </div>
-                   ))}
-               </div>
+
+               {circleItems.length > 0 ? (
+                   <div className="space-y-4">
+                       {circleItems.map(item => (
+                           <div 
+                                key={item.id}
+                                onClick={() => setViewingItemId(item.id)}
+                                className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:border-brand-200 transition-colors"
+                           >
+                               <div className="flex items-center space-x-4 mb-3">
+                                   <img src={item.imageUrl} alt={item.title} className="w-16 h-16 rounded-lg object-cover bg-gray-100" />
+                                   <div className="flex-1 min-w-0">
+                                       <h4 className="font-bold text-gray-900 truncate">{item.title}</h4>
+                                       <p className="text-xs text-gray-500 mb-1">Added by {getUser(item.userId)?.firstName}</p>
+                                       <div className="text-xs font-medium text-brand-600">{currencySymbol}{item.price - item.fundedAmount} needed</div>
+                                   </div>
+                               </div>
+                               
+                               <div className="w-full bg-gray-100 rounded-full h-1.5 mb-3">
+                                    <div className="bg-brand-500 h-1.5 rounded-full" style={{ width: `${Math.min((item.fundedAmount / item.price) * 100, 100)}%` }}></div>
+                               </div>
+
+                               <button 
+                                  onClick={(e) => { e.stopPropagation(); setContributingItem(item); }}
+                                  className="w-full py-2 bg-gray-900 text-white rounded-lg text-sm font-bold flex items-center justify-center hover:bg-gray-800"
+                               >
+                                  <DollarSign size={14} className="mr-1" /> Contribute
+                               </button>
+                           </div>
+                       ))}
+                   </div>
+               ) : (
+                   <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                       <p className="text-gray-500 text-sm mb-2">No product goal set yet.</p>
+                       <button onClick={() => handleAddCircleGoal(circle.id)} className="text-brand-600 font-bold text-sm underline">Set a goal now</button>
+                   </div>
+               )}
             </div>
         </div>
     );
@@ -1688,36 +1812,113 @@ const App: React.FC = () => {
         </button>
         <h2 className="text-xl font-bold text-gray-800 ml-2">My Wallet</h2>
       </div>
+
+      {/* Balance Card */}
       <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-6 text-white shadow-xl mb-6">
         <p className="text-gray-400 text-sm font-medium mb-1">Total Withdrawable Balance</p>
         <h1 className="text-4xl font-extrabold mb-6">{currencySymbol}{walletBalance.available.toFixed(2)}</h1>
-        <button onClick={() => setShowWithdrawModal(true)} className="w-full bg-white text-gray-900 py-3 rounded-xl font-bold">Withdraw</button>
+        
+        <div className="flex space-x-3">
+          <button 
+            onClick={() => setShowWithdrawModal(true)}
+            disabled={walletBalance.available <= 0}
+            className="flex-1 bg-white text-gray-900 py-3 rounded-xl font-bold flex items-center justify-center space-x-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Landmark size={18} />
+            <span>Withdraw</span>
+          </button>
+          <button className="flex-1 bg-white/10 text-white py-3 rounded-xl font-bold flex items-center justify-center space-x-2 hover:bg-white/20 backdrop-blur-sm">
+             <RefreshCcw size={18} />
+             <span>History</span>
+          </button>
+        </div>
       </div>
+
+      {/* Locked Funds Info */}
+      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between mb-6">
+         <div className="flex items-center space-x-3">
+            <div className="bg-brand-50 p-3 rounded-full text-brand-600">
+              <AlertCircle size={20} />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 font-medium">Locked Funds</p>
+              <p className="text-lg font-bold text-gray-900">{currencySymbol}{walletBalance.locked.toFixed(2)}</p>
+            </div>
+         </div>
+         <p className="text-xs text-gray-400 max-w-[120px] text-right">Restricted to specific product purchases.</p>
+      </div>
+
       <h3 className="font-bold text-gray-800 mb-4">Recent Transactions</h3>
       <div className="space-y-3">
-         {recentTransactions.map(tx => (
-             <div key={tx.id} className="bg-white p-4 rounded-xl border border-gray-100 flex justify-between items-center">
-                 <div>
-                     <p className="font-bold text-gray-900">Received</p>
-                     <p className="text-[10px] text-gray-400 truncate max-w-[200px]">For: {tx.itemTitle}</p>
+         {recentTransactions.length > 0 ? recentTransactions.map(tx => {
+             const contributor = getUser(tx.contributorId);
+             const displayName = tx.isAnonymous ? "Anonymous" : (contributor?.name || "Unknown User");
+             const date = new Date(tx.timestamp).toLocaleDateString();
+             
+             return (
+                <div key={tx.id} className="bg-white p-4 rounded-xl border border-gray-100 flex justify-between items-center">
+                    <div className="flex items-center space-x-3">
+                       <div className="bg-green-100 p-2 rounded-full text-green-600">
+                         <DollarSign size={18} />
+                       </div>
+                       <div>
+                         <p className="font-bold text-gray-900">Contribution Received</p>
+                         <p className="text-xs text-gray-500">From {displayName} • {date}</p>
+                         <p className="text-[10px] text-gray-400 truncate max-w-[200px]">For: {tx.itemTitle}</p>
+                       </div>
+                    </div>
+                    <span className="font-bold text-green-600">+{currencySymbol}{tx.amount}</span>
                  </div>
-                 <span className="font-bold text-green-600">+{currencySymbol}{tx.amount}</span>
-             </div>
-         ))}
+             );
+         }) : (
+            <div className="text-center text-gray-400 text-sm py-4">
+                No recent transactions.
+            </div>
+         )}
       </div>
+
+      {/* Withdraw Modal Overlay */}
       {showWithdrawModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-md rounded-3xl p-6">
-            <h3 className="font-bold text-xl text-gray-900 mb-4">Withdraw</h3>
-             <button onClick={() => { alert("Withdrawn!"); setShowWithdrawModal(false); }} className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold">Confirm</button>
-             <button onClick={() => setShowWithdrawModal(false)} className="w-full mt-2 text-gray-500 py-3">Cancel</button>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 animate-in slide-in-from-bottom duration-300">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-bold text-xl text-gray-900">Withdraw Funds</h3>
+              <button onClick={() => setShowWithdrawModal(false)} className="bg-gray-100 p-2 rounded-full text-gray-500">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-sm text-gray-500 mb-2">Amount to withdraw</p>
+              <div className="text-4xl font-bold text-gray-900 mb-2 flex items-center">
+                <span className="text-gray-400 mr-1">{currencySymbol}</span>
+                {walletBalance.available.toFixed(2)}
+              </div>
+              <p className="text-xs text-gray-400">Funds will be transferred to your linked bank account ending in ****4242.</p>
+            </div>
+
+            <button 
+              onClick={() => { alert(`Processing withdrawal of ${currencySymbol}${walletBalance.available}`); setShowWithdrawModal(false); }}
+              className="w-full bg-gray-900 text-white py-4 rounded-xl font-bold text-lg mb-3"
+            >
+              Confirm Withdrawal
+            </button>
+            <button 
+               onClick={() => setShowWithdrawModal(false)}
+               className="w-full bg-gray-50 text-gray-700 py-4 rounded-xl font-bold"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
     </div>
   );
 
-  const renderMyProfile = () => (
+  const renderMyProfile = () => {
+    const familyMembers = me.familyMemberIds.map(id => getUser(id)).filter(Boolean);
+
+    return (
         <div className="px-4 pb-24">
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center">
@@ -1726,24 +1927,130 @@ const App: React.FC = () => {
                     </button>
                     <h2 className="text-2xl font-bold text-gray-800">My Profile</h2>
                 </div>
-                <button onClick={() => setView('SETTINGS')} className="p-2 bg-gray-100 rounded-full">
+                
+                <button 
+                  onClick={() => setView('SETTINGS')}
+                  className="p-2 bg-gray-100 rounded-full text-gray-600 hover:bg-brand-50 hover:text-brand-600 transition-colors"
+                >
                   <Settings size={20} />
                 </button>
             </div>
-             <div onClick={() => setView('WALLET')} className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-5 text-white shadow-lg mb-6 cursor-pointer">
-                   <h3 className="text-2xl font-bold">{currencySymbol}{walletBalance.available.toFixed(2)}</h3>
-                   <span className="text-xs text-gray-400">Wallet Balance</span>
+
+            {/* My ID Card - Moved from Friends View */}
+            <div className="bg-gradient-to-r from-purple-100 to-brand-50 p-4 rounded-xl mb-6 flex justify-between items-center border border-purple-200">
+                <div>
+                    <p className="text-xs font-bold text-purple-600 uppercase tracking-wide">My GiftCircle ID</p>
+                    <p className="text-lg font-bold text-gray-900">{me.id}</p>
+                </div>
+                <button 
+                    onClick={() => navigator.clipboard.writeText(me.id).then(() => alert("ID copied!"))}
+                    className="p-2 bg-white rounded-lg text-gray-500 hover:text-brand-600 shadow-sm"
+                >
+                    <Copy size={20} />
+                </button>
             </div>
+
+            {/* Wallet Entry Card */}
+            <div 
+              onClick={() => setView('WALLET')}
+              className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-5 text-white shadow-lg mb-6 cursor-pointer relative overflow-hidden group"
+            >
+                <div className="relative z-10 flex justify-between items-center">
+                   <div>
+                      <p className="text-gray-300 text-xs font-bold uppercase tracking-wider mb-1">Wallet Balance</p>
+                      <h3 className="text-2xl font-bold">{currencySymbol}{walletBalance.available.toFixed(2)}</h3>
+                   </div>
+                   <div className="bg-white/20 p-3 rounded-xl backdrop-blur-sm group-hover:bg-white/30 transition-colors">
+                      <Wallet size={24} />
+                   </div>
+                </div>
+                <div className="mt-4 flex items-center text-xs text-gray-400">
+                   <span className="bg-white/10 px-2 py-1 rounded mr-2">Locked: {currencySymbol}{walletBalance.locked}</span>
+                   <span>Tap to withdraw</span>
+                </div>
+            </div>
+
             <form onSubmit={handleSaveProfile} className="space-y-6">
+                {/* Header Card */}
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center">
                     <img src={me.avatar} alt="Profile" className="w-24 h-24 rounded-full border-4 border-brand-100 mb-4" />
-                    <input name="firstName" defaultValue={me.firstName} className="w-full p-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500 mb-2" />
-                    <input name="lastName" defaultValue={me.lastName} className="w-full p-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500" />
+                    <div className="grid grid-cols-2 gap-4 w-full">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1">First Name</label>
+                            <input name="firstName" defaultValue={me.firstName} className="w-full p-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500" required />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1">Last Name</label>
+                            <input name="lastName" defaultValue={me.lastName} className="w-full p-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500" required />
+                        </div>
+                    </div>
                 </div>
-                <button type="submit" className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold">Save Changes</button>
+
+                {/* Details Card */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <h3 className="font-bold text-gray-800 mb-4 flex items-center">
+                        <UserIcon size={18} className="mr-2 text-brand-500" /> Personal Details
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1">Age</label>
+                            <input name="age" type="number" defaultValue={me.age} className="w-full p-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1">Sex</label>
+                            <select name="sex" defaultValue={me.sex} className="w-full p-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500">
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div className="mt-4">
+                        <label className="block text-xs font-bold text-gray-500 mb-1">Phone Number</label>
+                        <div className="relative">
+                            <Phone className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                            <input name="phoneNumber" type="tel" defaultValue={me.phoneNumber} className="w-full pl-8 p-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500" placeholder="+1 555-000-0000" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Family Card */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <h3 className="font-bold text-gray-800 mb-4 flex items-center">
+                        <Users size={18} className="mr-2 text-brand-500" /> Family Members
+                    </h3>
+                    
+                    <div className="space-y-3 mb-4">
+                        {familyMembers.length > 0 ? familyMembers.map(member => (
+                            <div key={member?.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                                <div className="flex items-center space-x-3">
+                                    <img src={member?.avatar} alt={member?.name} className="w-8 h-8 rounded-full" />
+                                    <span className="font-medium text-sm text-gray-900">{member?.name}</span>
+                                </div>
+                                <button type="button" onClick={() => removeFamilyMember(member!.id)} className="text-red-400 hover:text-red-600">
+                                    <Trash2 size={16} />
+                                </button>
+                            </div>
+                        )) : (
+                            <p className="text-sm text-gray-400 italic">No family members added.</p>
+                        )}
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                        <input name="familyId" placeholder="Enter GiftCircle ID (e.g. u2)" className="flex-1 p-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500 text-sm" />
+                        <button type="button" onClick={addFamilyMember} className="bg-brand-100 text-brand-600 p-2 rounded-lg hover:bg-brand-200">
+                            <PlusCircle size={20} />
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold hover:bg-gray-800 flex justify-center items-center">
+                    <Save size={18} className="mr-2" /> Save Changes
+                </button>
             </form>
         </div>
-  );
+    );
+  };
 
   const renderSettings = () => (
     <div className="px-4 pb-24">
@@ -1751,21 +2058,71 @@ const App: React.FC = () => {
             <button onClick={() => setView('MY_PROFILE')} className="p-2 -ml-2 text-gray-500 hover:text-gray-800">
                 <ArrowLeft size={24} />
             </button>
-            <h2 className="text-xl font-bold text-gray-800 ml-2">Settings</h2>
+            <h2 className="text-xl font-bold text-gray-800 ml-2">Contribution Settings</h2>
         </div>
+
         <form onSubmit={handleSaveSettings} className="bg-white p-6 rounded-2xl shadow-sm space-y-6">
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Default Contribution</label>
-                <input name="defaultGiftAmount" type="number" defaultValue={me.settings.defaultGiftAmount} className="w-full p-3 bg-gray-50 rounded-xl" />
+                <label className="block text-sm font-medium text-gray-700 mb-2">Default Contribution Amount ({currencySymbol})</label>
+                <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">{currencySymbol}</span>
+                    <input 
+                        name="defaultGiftAmount" 
+                        type="number" 
+                        defaultValue={me.settings.defaultGiftAmount}
+                        className="w-full pl-10 pr-4 py-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500" 
+                    />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">This amount will be pre-filled when you contribute.</p>
             </div>
+
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Max Contribution Limit ({currencySymbol})</label>
+                <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">{currencySymbol}</span>
+                    <input 
+                        name="maxGiftAmount" 
+                        type="number" 
+                        defaultValue={me.settings.maxGiftAmount}
+                        className="w-full pl-10 pr-4 py-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500" 
+                    />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">We'll warn you if you try to exceed this amount.</p>
+            </div>
+
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
-                <select name="currency" defaultValue={me.settings.currency} className="w-full p-3 bg-gray-50 rounded-xl">
-                    <option value="INR">INR</option>
-                    <option value="USD">USD</option>
+                <select 
+                    name="currency" 
+                    defaultValue={me.settings.currency}
+                    className="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500"
+                >
+                    <option value="INR">INR (₹)</option>
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="GBP">GBP (£)</option>
                 </select>
+                <p className="text-xs text-gray-500 mt-1">Display all prices in this currency.</p>
             </div>
-            <button type="submit" className="w-full bg-brand-600 text-white py-4 rounded-xl font-bold">Update</button>
+
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                <label className="flex items-center space-x-3 cursor-pointer">
+                    <input 
+                        name="autoAcceptContacts" 
+                        type="checkbox" 
+                        defaultChecked={me.settings.autoAcceptContacts}
+                        className="w-5 h-5 text-brand-600 rounded focus:ring-brand-500 border-gray-300"
+                    />
+                    <div>
+                        <span className="block text-sm font-bold text-gray-800">Auto-accept requests from contacts</span>
+                        <span className="text-xs text-gray-500">Automatically accept friend requests if the sender is in your phone contacts.</span>
+                    </div>
+                </label>
+            </div>
+
+            <button type="submit" className="w-full bg-brand-600 text-white py-4 rounded-xl font-bold hover:bg-brand-700 shadow-lg shadow-brand-200 mt-4">
+                Update Settings
+            </button>
         </form>
     </div>
   );
@@ -1773,17 +2130,6 @@ const App: React.FC = () => {
   if (!isLoggedIn) {
      if (view === 'SIGNUP') return renderSignup();
      return renderLogin();
-  }
-
-  if (loading) {
-      return (
-          <div className="min-h-screen flex items-center justify-center bg-gray-50">
-              <div className="flex flex-col items-center">
-                  <Loader2 className="animate-spin text-brand-600 mb-4" size={48} />
-                  <p className="text-gray-500 font-medium">Loading your circle...</p>
-              </div>
-          </div>
-      );
   }
 
   return (
@@ -1815,6 +2161,11 @@ const App: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {displayedWishlist.map(item => renderWishlistItem(item, true))}
               </div>
+              {displayedWishlist.length === 0 && (
+                  <div className="text-center py-12 text-gray-400">
+                      <p>No {wishlistTab.toLowerCase()} wishes found.</p>
+                  </div>
+              )}
             </div>
           </>
         )}
@@ -1825,43 +2176,68 @@ const App: React.FC = () => {
                  <h2 className="text-2xl font-bold text-gray-800">Connections</h2>
                  <button 
                     onClick={() => setShowAddFriendModal(true)}
-                    className="bg-brand-600 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center space-x-2"
+                    className="bg-brand-600 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center space-x-2 hover:bg-brand-700 shadow-lg shadow-brand-200 transition-all active:scale-95"
                  >
                     <UserPlus size={18} />
                     <span>Add Friend</span>
                  </button>
              </div>
 
+             {/* Tabs */}
              <div className="bg-white p-1 rounded-xl shadow-sm border border-gray-100 flex mb-6">
                  <button 
                     onClick={() => setFriendsViewTab('FRIENDS')}
                     className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${friendsViewTab === 'FRIENDS' ? 'bg-brand-50 text-brand-700' : 'text-gray-500 hover:text-gray-700'}`}
                  >
-                    My Circle
+                    My Circle ({friends.length})
                  </button>
                  <button 
                     onClick={() => setFriendsViewTab('CIRCLES')}
                     className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${friendsViewTab === 'CIRCLES' ? 'bg-brand-50 text-brand-700' : 'text-gray-500 hover:text-gray-700'}`}
                  >
-                    Gift Circles
+                    Gift Circles ({circles.length})
                  </button>
              </div>
 
              {friendsViewTab === 'FRIENDS' ? (
                 <>
+                    {/* Incoming Requests */}
                     {incomingRequests.length > 0 && (
                         <div className="mb-8">
-                            <h3 className="font-bold text-gray-800 mb-3">Friend Requests</h3>
+                            <h3 className="font-bold text-gray-800 mb-3 flex items-center">
+                                <div className="bg-red-100 text-red-500 p-1 rounded mr-2">
+                                    <UserIcon size={14} />
+                                </div>
+                                Friend Requests <span className="ml-2 bg-red-100 text-red-600 px-2 py-0.5 rounded-full text-xs">{incomingRequests.length}</span>
+                            </h3>
                             <div className="space-y-3">
                                 {incomingRequests.map(req => {
-                                    const user = users.find(u => u.id === req.fromUserId);
+                                    const user = MOCK_USERS.find(u => u.id === req.fromUserId);
                                     if (!user) return null;
                                     return (
                                         <div key={req.id} className="bg-white p-4 rounded-xl shadow-sm border border-red-100 flex items-center justify-between">
-                                            <p className="font-bold text-gray-900">{user.name}</p>
+                                            <div className="flex items-center space-x-3">
+                                                <img src={user.avatar} alt={user.name} className="w-12 h-12 rounded-full object-cover" />
+                                                <div>
+                                                    <p className="font-bold text-gray-900">{user.name}</p>
+                                                    <p className="text-xs text-gray-500">Wants to join your circle</p>
+                                                </div>
+                                            </div>
                                             <div className="flex space-x-2">
-                                                <button onClick={() => handleAcceptFriendRequest(req.id)} className="p-2 bg-green-100 text-green-700 rounded-lg"><Check size={20} /></button>
-                                                <button onClick={() => handleRejectFriendRequest(req.id)} className="p-2 bg-red-100 text-red-700 rounded-lg"><X size={20} /></button>
+                                                <button 
+                                                    onClick={() => handleAcceptFriendRequest(req.id)}
+                                                    className="p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200"
+                                                    title="Accept"
+                                                >
+                                                    <Check size={20} />
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleRejectFriendRequest(req.id)}
+                                                    className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
+                                                    title="Decline"
+                                                >
+                                                    <X size={20} />
+                                                </button>
                                             </div>
                                         </div>
                                     );
@@ -1870,8 +2246,38 @@ const App: React.FC = () => {
                         </div>
                     )}
 
+                    {/* Sent Pending Requests */}
+                    {sentRequests.length > 0 && (
+                        <div className="mb-8">
+                            <h3 className="font-bold text-gray-800 mb-3 text-sm uppercase opacity-70 tracking-wide">Pending Sent</h3>
+                            <div className="space-y-3">
+                                {sentRequests.map(req => {
+                                    const user = MOCK_USERS.find(u => u.id === req.toUserId);
+                                    if (!user) return null;
+                                    return (
+                                        <div key={req.id} className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex items-center justify-between opacity-80">
+                                            <div className="flex items-center space-x-3">
+                                                <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-500">
+                                                    <UserIcon size={20} />
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-gray-700 text-sm">{user.name || `User ${user.id}`}</p>
+                                                    <p className="text-xs text-gray-400">Request Sent</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center text-orange-400 text-xs font-bold px-2 py-1 bg-orange-50 rounded-md">
+                                                <Clock size={12} className="mr-1" /> Pending
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Friends List */}
                     <div className="space-y-4">
-                        {friends.map(friend => (
+                        {friends.length > 0 ? friends.map(friend => (
                         <div 
                             key={friend.id} 
                             onClick={() => { setSelectedFriendId(friend.id); setView('PROFILE'); }}
@@ -1880,28 +2286,84 @@ const App: React.FC = () => {
                             <img src={friend.avatar} alt={friend.name} className="w-14 h-14 rounded-full object-cover" />
                             <div className="flex-1">
                             <h3 className="font-bold text-gray-900">{friend.name}</h3>
-                            <p className="text-sm text-gray-500">View Profile</p>
+                            <p className="text-sm text-gray-500">3 upcoming events</p>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); handleBlockUser(friend.id); }}
+                                    className="p-2 bg-red-50 text-red-400 rounded-full hover:bg-red-100 hover:text-red-600 transition-colors"
+                                    title="Block User"
+                                >
+                                    <Ban size={20} />
+                                </button>
+                                <div className="bg-gray-100 p-2 rounded-full text-gray-400">
+                                    <ExternalLink size={20} />
+                                </div>
                             </div>
                         </div>
-                        ))}
+                        )) : (
+                            <div className="text-center py-10 text-gray-400 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                                <Users size={32} className="mx-auto mb-2 opacity-30" />
+                                <p className="text-sm">Your circle is empty.</p>
+                                <button onClick={() => setShowAddFriendModal(true)} className="text-brand-600 font-bold text-sm mt-2 hover:underline">Add someone now</button>
+                            </div>
+                        )}
                     </div>
                 </>
              ) : (
+                /* Gift Circles List */
                 <div className="space-y-4">
-                    <button onClick={() => setShowCreateCircleModal(true)} className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold bg-white mb-4">Create New Circle</button>
-                    {circles.map(circle => (
-                        <div key={circle.id} onClick={() => { setActiveCircleId(circle.id); setView('CIRCLE_DETAIL'); }} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 cursor-pointer">
-                            <h3 className="font-bold text-gray-900">{circle.name}</h3>
-                            <p className="text-xs text-gray-500">{circle.memberIds.length} members</p>
+                    <button 
+                        onClick={() => setShowCreateCircleModal(true)}
+                        className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold flex items-center justify-center hover:border-brand-400 hover:text-brand-600 transition-colors bg-white mb-4"
+                    >
+                        <PlusCircle size={20} className="mr-2" /> Create New Circle
+                    </button>
+
+                    {circles.length > 0 ? circles.map(circle => (
+                        <div 
+                            key={circle.id}
+                            onClick={() => { setActiveCircleId(circle.id); setView('CIRCLE_DETAIL'); }}
+                            className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:border-brand-200 transition-colors"
+                        >
+                            <div className="flex justify-between items-start mb-2">
+                                <div className="flex items-center space-x-3">
+                                    <div className="bg-indigo-100 p-2.5 rounded-lg text-indigo-600">
+                                        <Users size={20} />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-gray-900">{circle.name}</h3>
+                                        <p className="text-xs text-gray-500">{circle.memberIds.length} members</p>
+                                    </div>
+                                </div>
+                                <span className="text-xs text-gray-400">{new Date(circle.createdTimestamp).toLocaleDateString()}</span>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-3 pl-12 line-clamp-1">{circle.description}</p>
+                            
+                            <div className="pl-12 flex -space-x-2">
+                                {circle.memberIds.slice(0, 5).map(id => {
+                                    const u = getUser(id);
+                                    return u ? <img key={u.id} src={u.avatar} className="w-6 h-6 rounded-full border border-white" /> : null;
+                                })}
+                                {circle.memberIds.length > 5 && (
+                                    <div className="w-6 h-6 rounded-full bg-gray-100 text-[10px] flex items-center justify-center border border-white font-medium">+{circle.memberIds.length - 5}</div>
+                                )}
+                            </div>
                         </div>
-                    ))}
+                    )) : (
+                        <div className="text-center py-10 text-gray-400">
+                            <p>No gift circles yet.</p>
+                        </div>
+                    )}
                 </div>
              )}
           </div>
         )}
 
         {view === 'CIRCLE_DETAIL' && renderCircleDetail()}
+
         {view === 'EVENT_DETAIL' && renderEventDetail()}
+
         {view === 'PROFILE' && selectedFriendId && (
           <>
              <div className="px-4 mb-6">
@@ -1912,6 +2374,7 @@ const App: React.FC = () => {
                      <img src={getUser(selectedFriendId)?.avatar} className="w-20 h-20 rounded-full border-4 border-white shadow-md" alt="profile" />
                      <div>
                          <h2 className="text-2xl font-bold text-gray-900">{getUser(selectedFriendId)?.name}</h2>
+                         <p className="text-gray-500">San Francisco, CA</p>
                      </div>
                  </div>
              </div>
@@ -1938,27 +2401,134 @@ const App: React.FC = () => {
                 }} className="p-2 -ml-2 text-gray-500 hover:text-gray-800">
                     <ArrowLeft size={24} />
                 </button>
-                <h2 className="text-xl font-bold text-gray-800 ml-2">Add Wish</h2>
+                <h2 className="text-xl font-bold text-gray-800 ml-2">
+                    {addingItemToCircleId ? 'Add Circle Goal' : 'Add to Wishlist'}
+                </h2>
             </div>
             
             <form onSubmit={handleAddItem} className="bg-white p-6 rounded-2xl shadow-sm space-y-4">
+                {addingItemToCircleId && (
+                    <div className="bg-indigo-50 text-indigo-800 p-3 rounded-lg text-sm mb-2 flex items-center">
+                        <Target size={16} className="mr-2" />
+                        Adding goal to circle: <span className="font-bold ml-1">{circles.find(c => c.id === addingItemToCircleId)?.name}</span>
+                    </div>
+                )}
+
+                {/* Entry Method Toggle */}
                 <div className="bg-gray-100 p-1 rounded-xl flex mb-4">
-                     <button type="button" onClick={() => setAddItemMethod('LINK')} className={`flex-1 py-2 rounded-lg text-sm font-bold ${addItemMethod === 'LINK' ? 'bg-white text-brand-600 shadow-sm' : 'text-gray-500'}`}>Link Auto-fill</button>
-                     <button type="button" onClick={() => setAddItemMethod('MANUAL')} className={`flex-1 py-2 rounded-lg text-sm font-bold ${addItemMethod === 'MANUAL' ? 'bg-white text-brand-600 shadow-sm' : 'text-gray-500'}`}>Manual Entry</button>
+                     <button 
+                        type="button"
+                        onClick={() => setAddItemMethod('LINK')}
+                        className={`flex-1 py-2 rounded-lg text-sm font-bold flex items-center justify-center space-x-2 transition-all ${addItemMethod === 'LINK' ? 'bg-white text-brand-600 shadow-sm' : 'text-gray-500'}`}
+                     >
+                        <LinkIcon size={16} />
+                        <span>Link Auto-fill</span>
+                     </button>
+                     <button 
+                        type="button"
+                        onClick={() => setAddItemMethod('MANUAL')}
+                        className={`flex-1 py-2 rounded-lg text-sm font-bold flex items-center justify-center space-x-2 transition-all ${addItemMethod === 'MANUAL' ? 'bg-white text-brand-600 shadow-sm' : 'text-gray-500'}`}
+                     >
+                        <PenTool size={16} />
+                        <span>Manual Entry</span>
+                     </button>
                 </div>
 
                 {addItemMethod === 'LINK' ? (
-                    <div className="space-y-4">
-                        <input value={itemDraft.url} onChange={e => setItemDraft({...itemDraft, url: e.target.value})} type="url" placeholder="Paste link..." className="w-full p-3 bg-gray-50 rounded-xl" autoFocus />
-                        <button type="button" onClick={handleFetchItemDetails} disabled={!itemDraft.url || isSimulatingFetch} className="w-full bg-brand-600 text-white py-4 rounded-xl font-bold">
+                    <div className="space-y-4 animate-in fade-in slide-in-from-left duration-200">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Product Link</label>
+                            <input 
+                                value={itemDraft.url}
+                                onChange={e => setItemDraft({...itemDraft, url: e.target.value})}
+                                type="url" 
+                                placeholder="https://amazon.com/..." 
+                                className="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500" 
+                                autoFocus
+                            />
+                            <p className="text-xs text-gray-400 mt-1">Paste a link from Amazon or Flipkart</p>
+                        </div>
+                        
+                        <div className="p-4 bg-blue-50 rounded-xl text-blue-800 text-sm">
+                            Tip: We'll attempt to fetch the product name and price automatically.
+                        </div>
+
+                        <button 
+                            type="button" 
+                            onClick={handleFetchItemDetails}
+                            disabled={!itemDraft.url || isSimulatingFetch}
+                            className="w-full bg-brand-600 text-white py-4 rounded-xl font-bold hover:bg-brand-700 shadow-lg shadow-brand-200 flex justify-center items-center disabled:opacity-70"
+                        >
                             {isSimulatingFetch ? <Loader2 className="animate-spin mr-2" /> : 'Fetch Details'}
                         </button>
                     </div>
                 ) : (
-                    <div className="space-y-4">
-                        <input value={itemDraft.title} onChange={e => setItemDraft({...itemDraft, title: e.target.value})} type="text" className="w-full p-3 bg-gray-50 rounded-xl" required placeholder="Product Name" />
-                        <input value={itemDraft.price} onChange={e => setItemDraft({...itemDraft, price: e.target.value})} type="number" className="w-full p-3 bg-gray-50 rounded-xl" required placeholder="Price" />
-                        <button type="submit" className="w-full bg-brand-600 text-white py-4 rounded-xl font-bold">Add Wish</button>
+                    <div className="space-y-4 animate-in fade-in slide-in-from-right duration-200">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
+                            <input 
+                                value={itemDraft.title}
+                                onChange={e => setItemDraft({...itemDraft, title: e.target.value})}
+                                type="text" 
+                                className="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500" 
+                                required 
+                                placeholder="e.g. Sony Headphones"
+                            />
+                        </div>
+                        
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Price ({currencySymbol})</label>
+                            <input 
+                                value={itemDraft.price}
+                                onChange={e => setItemDraft({...itemDraft, price: e.target.value})}
+                                type="number" 
+                                className="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500" 
+                                required 
+                                placeholder="0.00"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+                            <textarea 
+                                value={itemDraft.description}
+                                onChange={e => setItemDraft({...itemDraft, description: e.target.value})}
+                                className="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500" 
+                                rows={3}
+                                placeholder="Add notes about size, color, etc."
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Product Link (Optional)</label>
+                            <input 
+                                value={itemDraft.url}
+                                onChange={e => setItemDraft({...itemDraft, url: e.target.value})}
+                                type="url" 
+                                className="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500" 
+                                placeholder="https://..."
+                            />
+                        </div>
+
+                        {!addingItemToCircleId && (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Tag with Event (Optional)</label>
+                                <select 
+                                    value={itemDraft.eventId}
+                                    onChange={e => setItemDraft({...itemDraft, eventId: e.target.value})}
+                                    className="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500 text-gray-700"
+                                >
+                                    <option value="">-- No Event --</option>
+                                    {myActiveEvents.map(event => (
+                                        <option key={event.id} value={event.id}>{event.title}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        <button type="submit" className="w-full bg-brand-600 text-white py-4 rounded-xl font-bold hover:bg-brand-700 shadow-lg shadow-brand-200 mt-4">
+                            {addingItemToCircleId ? 'Set Circle Goal' : 'Add Wish'}
+                        </button>
                     </div>
                 )}
             </form>
@@ -1976,19 +2546,64 @@ const App: React.FC = () => {
         )}
 
         {view === 'GIFT_FLOW' && renderGiftFlow()}
+        
         {view === 'MY_PROFILE' && renderMyProfile()}
+        
         {view === 'SETTINGS' && renderSettings()}
+
         {view === 'WALLET' && renderWallet()}
+
       </main>
 
       {renderNav()}
 
-      {showOnboarding && <OnboardingModal onClose={() => setShowOnboarding(false)} />}
-      {showAddFriendModal && <AddFriendModal onClose={() => setShowAddFriendModal(false)} onSend={handleSendFriendRequest} myId={me.id} />}
-      {showCreateCircleModal && <CreateCircleModal onClose={() => setShowCreateCircleModal(false)} onCreate={handleCreateCircle} friends={friends} />}
-      {showEventInviteModal && viewingEventId && <EventInviteModal friends={friends} existingInviteeIds={events.find(e => e.id === viewingEventId)?.inviteeIds || []} onClose={() => setShowEventInviteModal(false)} onSave={handleUpdateEventInvites} />}
-      {contributingItem && <ContributionModal item={contributingItem} defaultAmount={me.settings.defaultGiftAmount} maxAmount={me.settings.maxGiftAmount} currencySymbol={currencySymbol} onClose={() => setContributingItem(null)} onContribute={handleContribute} />}
-      {activeViewingItem && <WishDetailModal item={activeViewingItem} currencySymbol={currencySymbol} onClose={() => setViewingItemId(null)} />}
+      {showOnboarding && (
+        <OnboardingModal onClose={() => setShowOnboarding(false)} />
+      )}
+
+      {showAddFriendModal && (
+          <AddFriendModal 
+            onClose={() => setShowAddFriendModal(false)}
+            onSend={handleSendFriendRequest}
+            myId={me.id}
+          />
+      )}
+      
+      {showCreateCircleModal && (
+          <CreateCircleModal
+            onClose={() => setShowCreateCircleModal(false)}
+            onCreate={handleCreateCircle}
+            friends={friends}
+          />
+      )}
+
+      {showEventInviteModal && viewingEventId && (
+        <EventInviteModal 
+          friends={friends}
+          existingInviteeIds={events.find(e => e.id === viewingEventId)?.inviteeIds || []}
+          onClose={() => setShowEventInviteModal(false)}
+          onSave={handleUpdateEventInvites}
+        />
+      )}
+
+      {contributingItem && (
+        <ContributionModal 
+          item={contributingItem}
+          defaultAmount={me.settings.defaultGiftAmount}
+          maxAmount={me.settings.maxGiftAmount}
+          currencySymbol={currencySymbol}
+          onClose={() => setContributingItem(null)} 
+          onContribute={handleContribute} 
+        />
+      )}
+
+      {activeViewingItem && (
+        <WishDetailModal 
+            item={activeViewingItem} 
+            currencySymbol={currencySymbol}
+            onClose={() => setViewingItemId(null)} 
+        />
+      )}
     </div>
   );
 };
