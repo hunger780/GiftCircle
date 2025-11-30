@@ -1,7 +1,8 @@
 
 
+
 import React, { useState, useMemo } from 'react';
-import { Home, Users, PlusCircle, User as UserIcon, Gift, ExternalLink, Calendar, Share2, Search, ArrowLeft, DollarSign, LogOut, Cake, Heart, Baby, PartyPopper, Home as HomeIcon, Settings, Save, Trash2, CheckCircle, Circle, X, ShoppingBag, AlertCircle, Wallet, Landmark, CreditCard, RefreshCcw, Archive, ChevronRight, Lock, Unlock, Phone, UserPlus, Clock, Check, XCircle, Copy, Contact, Ban, MessageCircle, Target, Link as LinkIcon, PenTool, Loader2, MapPin, Star, PhoneCall, Mail, Filter } from 'lucide-react';
+import { Home, Users, PlusCircle, User as UserIcon, Gift, ExternalLink, Calendar, Share2, Search, ArrowLeft, DollarSign, LogOut, Cake, Heart, Baby, PartyPopper, Home as HomeIcon, Settings, Save, Trash2, CheckCircle, Circle, X, ShoppingBag, AlertCircle, Wallet, Landmark, CreditCard, RefreshCcw, Archive, ChevronRight, Lock, Unlock, Phone, UserPlus, Clock, Check, XCircle, Copy, Contact, Ban, MessageCircle, Target, Link as LinkIcon, PenTool, Loader2, MapPin, Star, PhoneCall, Mail, Filter, CalendarRange } from 'lucide-react';
 import { WishlistItem, User, ContributionType, ViewState, Event, EventType, WishlistStatus, FriendRequest, GiftCircle, Vendor } from './types.ts';
 import { MOCK_USERS, INITIAL_WISHLIST, MOCK_CURRENT_USER_ID, INITIAL_EVENTS, INITIAL_FRIEND_REQUESTS, INITIAL_CIRCLES, MOCK_VENDORS } from './constants.ts';
 import { ContributionModal } from './components/ContributionModal.tsx';
@@ -47,9 +48,14 @@ const OnboardingModal: React.FC<OnboardingProps> = ({ onClose }) => {
       description: "Friends can contribute to your gifts. 'Locked' funds are for specific items, while 'Free' funds go to your wallet for you to use anywhere."
     },
     {
-      icon: <Calendar size={48} className="text-brand-500" />,
-      title: "Event Tagging",
-      description: "Hosting a party? Create an event (Birthday, Wedding) and tag specific wishes to it so guests know exactly what to fund."
+      icon: <Users size={48} className="text-brand-500" />,
+      title: "Gift Circles",
+      description: "Create a Gift Circle with friends or family to pool money for big gifts like weddings or retirements."
+    },
+    {
+      icon: <Search size={48} className="text-brand-500" />,
+      title: "Event Planning",
+      description: "Find local suppliers, venues, and organizers for your events directly in the app. Filter by rating and location."
     }
   ];
 
@@ -1231,7 +1237,7 @@ const App: React.FC = () => {
             <Home size={24} />
             <span className="text-xs">Home</span>
             </button>
-            <button onClick={() => setView('FRIENDS')} className={`flex flex-col items-center space-y-1 ${view === 'FRIENDS' || view === 'CIRCLE_DETAIL' || (view === 'PROFILE' && selectedFriendId) ? 'text-brand-600' : 'text-gray-400'}`}>
+            <button onClick={() => setView('FRIENDS')} className={`flex flex-col items-center space-y-1 ${view === 'FRIENDS' || view === 'CIRCLE_DETAIL' || (view === 'PROFILE' && selectedFriendId) || view === 'GIFT_FLOW' ? 'text-brand-600' : 'text-gray-400'}`}>
             <Users size={24} />
             <span className="text-xs">Friends</span>
             </button>
@@ -1241,9 +1247,9 @@ const App: React.FC = () => {
             </div>
             <span className="text-xs font-medium text-gray-600">Add Wish</span>
             </button>
-            <button onClick={() => setView('GIFT_FLOW')} className={`flex flex-col items-center space-y-1 ${view === 'GIFT_FLOW' ? 'text-brand-600' : 'text-gray-400'}`}>
-            <Gift size={24} />
-            <span className="text-xs">Contribute</span>
+            <button onClick={() => setView('EVENT_PLANNING')} className={`flex flex-col items-center space-y-1 ${view === 'EVENT_PLANNING' ? 'text-brand-600' : 'text-gray-400'}`}>
+            <CalendarRange size={24} />
+            <span className="text-xs">Planning</span>
             </button>
             <button onClick={() => setView('MY_PROFILE')} className={`flex flex-col items-center space-y-1 ${view === 'MY_PROFILE' || view === 'SETTINGS' || view === 'WALLET' ? 'text-brand-600' : 'text-gray-400'}`}>
             <UserIcon size={24} />
@@ -1377,7 +1383,7 @@ const App: React.FC = () => {
                           <h3 className="font-bold text-xl mb-2 leading-tight">{e.title}</h3>
                           <p className="text-white/80 text-sm line-clamp-2">{e.description}</p>
                           <div className="mt-4 pt-3 border-t border-white/10 flex items-center text-xs font-medium text-white/90">
-                              <span>Tap for details & suppliers</span>
+                              <span>Tap for details</span>
                               <ChevronRight size={14} className="ml-1" />
                           </div>
                       </div>
@@ -1394,95 +1400,11 @@ const App: React.FC = () => {
     )
   }
 
-  const renderEventDetail = () => {
-     const event = events.find(e => e.id === viewingEventId);
-     if (!event) return null;
-     const linkedWishes = wishlist.filter(w => w.eventId === event.id && w.status === 'ACTIVE');
-     const invitees = event.inviteeIds?.map(id => getUser(id)).filter(Boolean) || [];
-     const isOwner = event.userId === me.id;
-
-     return (
+  const renderEventPlanning = () => {
+    return (
         <div className="px-4 pb-24">
              <div className="flex items-center mb-6">
-                <button onClick={() => setView('HOME')} className="p-2 -ml-2 text-gray-500 hover:text-gray-800">
-                    <ArrowLeft size={24} />
-                </button>
-                <h2 className="text-xl font-bold text-gray-800 ml-2">Event Details</h2>
-             </div>
-
-             {/* Event Header */}
-             <div className="bg-gradient-to-br from-brand-600 to-purple-600 rounded-2xl p-6 text-white shadow-lg mb-8 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-8 opacity-10 scale-150">
-                    {getEventIcon(event.type)}
-                  </div>
-                  <div className="flex items-center space-x-2 mb-2 bg-white/20 w-fit px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">
-                      {getEventIcon(event.type)}
-                      <span>{event.type}</span>
-                  </div>
-                  <h1 className="text-3xl font-extrabold mb-2">{event.title}</h1>
-                  <p className="text-purple-100 text-lg mb-4 flex items-center">
-                      <Calendar size={18} className="mr-2" />
-                      {new Date(event.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                  </p>
-                  <p className="opacity-90 leading-relaxed">{event.description}</p>
-             </div>
-
-            {/* Guest List Section */}
-             <div className="mb-8 bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-800 flex items-center">
-                    <Users size={18} className="mr-2 text-brand-500" /> Guest List
-                    <span className="ml-2 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">{invitees.length}</span>
-                  </h3>
-                  {isOwner && (
-                    <button 
-                      onClick={() => setShowEventInviteModal(true)}
-                      className="text-brand-600 text-xs font-bold flex items-center bg-brand-50 px-3 py-1.5 rounded-lg hover:bg-brand-100"
-                    >
-                      <UserPlus size={14} className="mr-1" /> Invite
-                    </button>
-                  )}
-                </div>
-                
-                {invitees.length > 0 ? (
-                  <div className="flex -space-x-3 overflow-x-auto pb-2 scrollbar-hide px-2">
-                     {invitees.map(user => (
-                       <img 
-                          key={user!.id} 
-                          src={user!.avatar} 
-                          alt={user!.name} 
-                          title={user!.name}
-                          className="w-10 h-10 rounded-full border-2 border-white shadow-sm" 
-                       />
-                     ))}
-                     <div className="w-10 h-10 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-gray-500 font-medium">
-                       ...
-                     </div>
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-400 italic">No guests invited yet.</p>
-                )}
-             </div>
-
-             {/* Linked Wishes */}
-             <div className="mb-8">
-                 <h3 className="font-bold text-gray-800 mb-3 flex justify-between items-center">
-                     <span>Linked Wishes</span>
-                     <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{linkedWishes.length}</span>
-                 </h3>
-                 {linkedWishes.length > 0 ? (
-                    <div className="flex space-x-3 overflow-x-auto pb-2 scrollbar-hide">
-                        {linkedWishes.map(w => (
-                            <div key={w.id} className="flex-shrink-0 w-40 bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
-                                <img src={w.imageUrl} className="w-full h-24 object-cover rounded-lg mb-2" />
-                                <p className="font-bold text-sm text-gray-900 truncate">{w.title}</p>
-                                <p className="text-xs text-brand-600 font-bold">{currencySymbol}{w.fundedAmount} / {currencySymbol}{w.price}</p>
-                            </div>
-                        ))}
-                    </div>
-                 ) : (
-                    <p className="text-sm text-gray-500 italic">No wishes linked to this event yet.</p>
-                 )}
+                <h2 className="text-2xl font-bold text-gray-800">Event Planning</h2>
              </div>
 
              {/* Supplier Search Section */}
@@ -1586,6 +1508,100 @@ const App: React.FC = () => {
                          </div>
                      )}
                  </div>
+             </div>
+        </div>
+    );
+  };
+
+  const renderEventDetail = () => {
+     const event = events.find(e => e.id === viewingEventId);
+     if (!event) return null;
+     const linkedWishes = wishlist.filter(w => w.eventId === event.id && w.status === 'ACTIVE');
+     const invitees = event.inviteeIds?.map(id => getUser(id)).filter(Boolean) || [];
+     const isOwner = event.userId === me.id;
+
+     return (
+        <div className="px-4 pb-24">
+             <div className="flex items-center mb-6">
+                <button onClick={() => setView('HOME')} className="p-2 -ml-2 text-gray-500 hover:text-gray-800">
+                    <ArrowLeft size={24} />
+                </button>
+                <h2 className="text-xl font-bold text-gray-800 ml-2">Event Details</h2>
+             </div>
+
+             {/* Event Header */}
+             <div className="bg-gradient-to-br from-brand-600 to-purple-600 rounded-2xl p-6 text-white shadow-lg mb-8 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-8 opacity-10 scale-150">
+                    {getEventIcon(event.type)}
+                  </div>
+                  <div className="flex items-center space-x-2 mb-2 bg-white/20 w-fit px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">
+                      {getEventIcon(event.type)}
+                      <span>{event.type}</span>
+                  </div>
+                  <h1 className="text-3xl font-extrabold mb-2">{event.title}</h1>
+                  <p className="text-purple-100 text-lg mb-4 flex items-center">
+                      <Calendar size={18} className="mr-2" />
+                      {new Date(event.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                  </p>
+                  <p className="opacity-90 leading-relaxed">{event.description}</p>
+             </div>
+
+            {/* Guest List Section */}
+             <div className="mb-8 bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-bold text-gray-800 flex items-center">
+                    <Users size={18} className="mr-2 text-brand-500" /> Guest List
+                    <span className="ml-2 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">{invitees.length}</span>
+                  </h3>
+                  {isOwner && (
+                    <button 
+                      onClick={() => setShowEventInviteModal(true)}
+                      className="text-brand-600 text-xs font-bold flex items-center bg-brand-50 px-3 py-1.5 rounded-lg hover:bg-brand-100"
+                    >
+                      <UserPlus size={14} className="mr-1" /> Invite
+                    </button>
+                  )}
+                </div>
+                
+                {invitees.length > 0 ? (
+                  <div className="flex -space-x-3 overflow-x-auto pb-2 scrollbar-hide px-2">
+                     {invitees.map(user => (
+                       <img 
+                          key={user!.id} 
+                          src={user!.avatar} 
+                          alt={user!.name} 
+                          title={user!.name}
+                          className="w-10 h-10 rounded-full border-2 border-white shadow-sm" 
+                       />
+                     ))}
+                     <div className="w-10 h-10 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-gray-500 font-medium">
+                       ...
+                     </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-400 italic">No guests invited yet.</p>
+                )}
+             </div>
+
+             {/* Linked Wishes */}
+             <div className="mb-8">
+                 <h3 className="font-bold text-gray-800 mb-3 flex justify-between items-center">
+                     <span>Linked Wishes</span>
+                     <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{linkedWishes.length}</span>
+                 </h3>
+                 {linkedWishes.length > 0 ? (
+                    <div className="flex space-x-3 overflow-x-auto pb-2 scrollbar-hide">
+                        {linkedWishes.map(w => (
+                            <div key={w.id} className="flex-shrink-0 w-40 bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                                <img src={w.imageUrl} className="w-full h-24 object-cover rounded-lg mb-2" />
+                                <p className="font-bold text-sm text-gray-900 truncate">{w.title}</p>
+                                <p className="text-xs text-brand-600 font-bold">{currencySymbol}{w.fundedAmount} / {currencySymbol}{w.price}</p>
+                            </div>
+                        ))}
+                    </div>
+                 ) : (
+                    <p className="text-sm text-gray-500 italic">No wishes linked to this event yet.</p>
+                 )}
              </div>
         </div>
      );
@@ -2363,6 +2379,8 @@ const App: React.FC = () => {
         {view === 'CIRCLE_DETAIL' && renderCircleDetail()}
 
         {view === 'EVENT_DETAIL' && renderEventDetail()}
+
+        {view === 'EVENT_PLANNING' && renderEventPlanning()}
 
         {view === 'PROFILE' && selectedFriendId && (
           <>

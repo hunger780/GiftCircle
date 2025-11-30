@@ -101,4 +101,4 @@ export interface Vendor {
   distance: string;
 }
 
-export type ViewState = 'LOGIN' | 'SIGNUP' | 'HOME' | 'FRIENDS' | 'ADD_ITEM' | 'PROFILE' | 'GIFT_FLOW' | 'CREATE_EVENT' | 'MY_PROFILE' | 'SETTINGS' | 'WALLET' | 'CIRCLE_DETAIL' | 'EVENT_DETAIL';
+export type ViewState = 'LOGIN' | 'SIGNUP' | 'HOME' | 'FRIENDS' | 'ADD_ITEM' | 'PROFILE' | 'GIFT_FLOW' | 'CREATE_EVENT' | 'MY_PROFILE' | 'SETTINGS' | 'WALLET' | 'CIRCLE_DETAIL' | 'EVENT_DETAIL' | 'EVENT_PLANNING';
