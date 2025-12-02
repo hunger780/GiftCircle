@@ -1,5 +1,6 @@
 
 
+
 export enum ContributionType {
   LOCKED = 'LOCKED', // Only for the specific product
   FREE = 'FREE'     // User can use cash for anything
@@ -78,6 +79,7 @@ export interface User {
   friends: string[]; // array of user IDs
   blockedUserIds: string[]; // array of blocked user IDs
   familyMemberIds: string[]; // array of GiftCircle IDs
+  acceptedEventIds: string[]; // Events accepted via notification
   settings: UserSettings;
 }
 
@@ -101,4 +103,22 @@ export interface Vendor {
   distance: string;
 }
 
-export type ViewState = 'LOGIN' | 'SIGNUP' | 'HOME' | 'FRIENDS' | 'ADD_ITEM' | 'PROFILE' | 'GIFT_FLOW' | 'CREATE_EVENT' | 'MY_PROFILE' | 'SETTINGS' | 'WALLET' | 'CIRCLE_DETAIL' | 'EVENT_DETAIL' | 'EVENT_PLANNING' | 'FRIEND_REQUESTS';
+export enum NotificationType {
+  MESSAGE = 'MESSAGE',
+  FRIEND_REQUEST = 'FRIEND_REQUEST',
+  EVENT_INVITE = 'EVENT_INVITE'
+}
+
+export interface Notification {
+  id: string;
+  userId: string; // Recipient
+  type: NotificationType;
+  title: string;
+  message: string;
+  timestamp: number;
+  isRead: boolean;
+  relatedId?: string; // ID of the friend, event, or object
+  actionStatus?: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'VIEWED';
+}
+
+export type ViewState = 'LOGIN' | 'SIGNUP' | 'HOME' | 'FRIENDS' | 'ADD_ITEM' | 'PROFILE' | 'GIFT_FLOW' | 'CREATE_EVENT' | 'MY_PROFILE' | 'SETTINGS' | 'WALLET' | 'CIRCLE_DETAIL' | 'EVENT_DETAIL' | 'EVENT_PLANNING' | 'FRIEND_REQUESTS' | 'NOTIFICATIONS';

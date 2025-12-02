@@ -1,6 +1,8 @@
 
 
-import { User, WishlistItem, Event, EventType, FriendRequest, GiftCircle, Vendor } from './types.ts';
+
+
+import { User, WishlistItem, Event, EventType, FriendRequest, GiftCircle, Vendor, Notification, NotificationType } from './types.ts';
 
 export const MOCK_CURRENT_USER_ID = 'u1';
 
@@ -17,6 +19,7 @@ export const MOCK_USERS: User[] = [
     friends: ['u2', 'u3', 'u4'],
     blockedUserIds: [],
     familyMemberIds: ['u2'],
+    acceptedEventIds: [],
     settings: {
       defaultGiftAmount: 25,
       maxGiftAmount: 500,
@@ -36,6 +39,7 @@ export const MOCK_USERS: User[] = [
     friends: ['u1'],
     blockedUserIds: [],
     familyMemberIds: ['u1'],
+    acceptedEventIds: [],
     settings: {
       defaultGiftAmount: 20,
       maxGiftAmount: 200,
@@ -55,6 +59,7 @@ export const MOCK_USERS: User[] = [
     friends: ['u1'],
     blockedUserIds: [],
     familyMemberIds: [],
+    acceptedEventIds: [],
     settings: {
       defaultGiftAmount: 15,
       maxGiftAmount: 100,
@@ -74,6 +79,7 @@ export const MOCK_USERS: User[] = [
     friends: ['u1'],
     blockedUserIds: [],
     familyMemberIds: [],
+    acceptedEventIds: [],
     settings: {
       defaultGiftAmount: 30,
       maxGiftAmount: 1000,
@@ -93,6 +99,7 @@ export const MOCK_USERS: User[] = [
     friends: [],
     blockedUserIds: [],
     familyMemberIds: [],
+    acceptedEventIds: [],
     settings: {
       defaultGiftAmount: 20,
       maxGiftAmount: 100,
@@ -257,4 +264,39 @@ export const MOCK_VENDORS: Vendor[] = [
         imageUrl: 'https://picsum.photos/seed/hall/200/200',
         distance: '0.8 km'
     }
+];
+
+export const INITIAL_NOTIFICATIONS: Notification[] = [
+  {
+    id: 'n1',
+    userId: 'u1',
+    type: NotificationType.MESSAGE,
+    title: 'Welcome to GiftCircle!',
+    message: 'Thanks for joining. Start by creating your first wishlist.',
+    timestamp: Date.now() - 172800000,
+    isRead: true,
+    actionStatus: 'VIEWED'
+  },
+  {
+    id: 'n2',
+    userId: 'u1',
+    type: NotificationType.FRIEND_REQUEST,
+    title: 'New Friend Request',
+    message: 'Alice Wonder wants to connect with you.',
+    relatedId: 'fr1', // Links to the friend request ID
+    timestamp: Date.now() - 86400000,
+    isRead: false,
+    actionStatus: 'PENDING'
+  },
+  {
+    id: 'n3',
+    userId: 'u1',
+    type: NotificationType.EVENT_INVITE,
+    title: 'Event Invitation',
+    message: 'Sarah invited you to "Sarah\'s Housewarming".',
+    relatedId: 'e2', // Links to the event ID
+    timestamp: Date.now() - 43200000,
+    isRead: false,
+    actionStatus: 'PENDING'
+  }
 ];

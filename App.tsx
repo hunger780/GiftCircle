@@ -1,8 +1,10 @@
 
+
+
 import React, { useState, useMemo } from 'react';
-import { Home, Users, PlusCircle, User as UserIcon, Gift, ExternalLink, Calendar, Share2, Search, ArrowLeft, DollarSign, LogOut, Cake, Heart, Baby, PartyPopper, Home as HomeIcon, Settings, Save, Trash2, CheckCircle, Circle, X, ShoppingBag, AlertCircle, Wallet, Landmark, CreditCard, RefreshCcw, Archive, ChevronRight, Lock, Unlock, Phone, UserPlus, Clock, Check, XCircle, Copy, Contact, Ban, MessageCircle, Target, Link as LinkIcon, PenTool, Loader2, MapPin, Star, PhoneCall, Mail, Filter, CalendarRange } from 'lucide-react';
-import { WishlistItem, User, ContributionType, ViewState, Event, EventType, WishlistStatus, FriendRequest, GiftCircle, Vendor } from './types.ts';
-import { MOCK_USERS, INITIAL_WISHLIST, MOCK_CURRENT_USER_ID, INITIAL_EVENTS, INITIAL_FRIEND_REQUESTS, INITIAL_CIRCLES, MOCK_VENDORS } from './constants.ts';
+import { Home, Users, PlusCircle, User as UserIcon, Gift, ExternalLink, Calendar, Share2, Search, ArrowLeft, DollarSign, LogOut, Cake, Heart, Baby, PartyPopper, Home as HomeIcon, Settings, Save, Trash2, CheckCircle, Circle, X, ShoppingBag, AlertCircle, Wallet, Landmark, CreditCard, RefreshCcw, Archive, ChevronRight, Lock, Unlock, Phone, UserPlus, Clock, Check, XCircle, Copy, Contact, Ban, MessageCircle, Target, Link as LinkIcon, PenTool, Loader2, MapPin, Star, PhoneCall, Mail, Filter, CalendarRange, Bell } from 'lucide-react';
+import { WishlistItem, User, ContributionType, ViewState, Event, EventType, WishlistStatus, FriendRequest, GiftCircle, Vendor, Notification, NotificationType } from './types.ts';
+import { MOCK_USERS, INITIAL_WISHLIST, MOCK_CURRENT_USER_ID, INITIAL_EVENTS, INITIAL_FRIEND_REQUESTS, INITIAL_CIRCLES, MOCK_VENDORS, INITIAL_NOTIFICATIONS } from './constants.ts';
 import { ContributionModal } from './components/ContributionModal.tsx';
 import { WishDetailModal } from './components/WishDetailModal.tsx';
 
@@ -593,6 +595,7 @@ const App: React.FC = () => {
   const [events, setEvents] = useState<Event[]>(INITIAL_EVENTS);
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>(INITIAL_FRIEND_REQUESTS);
   const [circles, setCircles] = useState<GiftCircle[]>(INITIAL_CIRCLES);
+  const [notifications, setNotifications] = useState<Notification[]>(INITIAL_NOTIFICATIONS);
   
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
   const [contributingItem, setContributingItem] = useState<WishlistItem | null>(null);
@@ -640,6 +643,10 @@ const App: React.FC = () => {
   const me = currentUserData;
   const currencySymbol = getCurrencySymbol(me.settings.currency);
 
+  const unreadNotificationsCount = useMemo(() => {
+    return notifications.filter(n => !n.isRead).length;
+  }, [notifications]);
+
   // Computed data
   const friends = useMemo(() => 
     MOCK_USERS.filter(u => me.friends.includes(u.id)), 
@@ -678,8 +685,9 @@ const App: React.FC = () => {
   }, [view, selectedFriendId, me.id, events]);
 
   const myActiveEvents = useMemo(() => {
-    return events.filter(e => e.userId === me.id);
-  }, [events, me.id]);
+    // Show events I created OR events I've accepted to participate in
+    return events.filter(e => e.userId === me.id || (me.acceptedEventIds && me.acceptedEventIds.includes(e.id)));
+  }, [events, me.id, me.acceptedEventIds]);
 
   // Derived Viewing Item
   const activeViewingItem = useMemo(() => {
@@ -788,6 +796,7 @@ const App: React.FC = () => {
       friends: [],
       blockedUserIds: [],
       familyMemberIds: [],
+      acceptedEventIds: [],
       settings: { defaultGiftAmount: 20, maxGiftAmount: 200, currency: 'INR', autoAcceptContacts: false }
     };
 
@@ -1104,6 +1113,126 @@ const App: React.FC = () => {
       setView('EVENT_DETAIL');
   };
 
+  const handleMarkAsRead = (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  };
+
+  const handleNotificationAction = (notification: Notification, action: 'ACCEPT' | 'REJECT') => {
+      if (notification.type === NotificationType.FRIEND_REQUEST && notification.relatedId) {
+          if (action === 'ACCEPT') {
+              handleAcceptFriendRequest(notification.relatedId);
+          } else {
+              handleRejectFriendRequest(notification.relatedId);
+          }
+      } else if (notification.type === NotificationType.EVENT_INVITE && notification.relatedId) {
+          if (action === 'ACCEPT') {
+             // Add to user's event board
+             if (!me.acceptedEventIds.includes(notification.relatedId)) {
+                setCurrentUserData({
+                    ...me,
+                    acceptedEventIds: [...(me.acceptedEventIds || []), notification.relatedId]
+                });
+             }
+          }
+      }
+
+      setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, actionStatus: action === 'ACCEPT' ? 'ACCEPTED' : 'REJECTED', isRead: true } : n));
+  };
+
+  const renderNotifications = () => (
+      <div className="px-4 pb-24">
+         <div className="flex items-center mb-6">
+            <button onClick={() => setView('HOME')} className="p-2 -ml-2 text-gray-500 hover:text-gray-800">
+                <ArrowLeft size={24} />
+            </button>
+            <h2 className="text-xl font-bold text-gray-800 ml-2">Notifications</h2>
+         </div>
+
+         {notifications.length > 0 ? (
+             <div className="space-y-4">
+                 {notifications.sort((a,b) => b.timestamp - a.timestamp).map(notification => {
+                     let icon;
+                     switch(notification.type) {
+                         case NotificationType.MESSAGE: icon = <MessageCircle size={20} className="text-blue-500" />; break;
+                         case NotificationType.FRIEND_REQUEST: icon = <UserPlus size={20} className="text-purple-500" />; break;
+                         case NotificationType.EVENT_INVITE: icon = <Calendar size={20} className="text-orange-500" />; break;
+                         default: icon = <Bell size={20} className="text-gray-500" />;
+                     }
+                     
+                     return (
+                         <div key={notification.id} className={`bg-white p-4 rounded-xl shadow-sm border ${notification.isRead ? 'border-gray-100' : 'border-brand-200 bg-brand-50/20'}`}>
+                             <div className="flex items-start space-x-3">
+                                 <div className={`p-2 rounded-full flex-shrink-0 ${notification.isRead ? 'bg-gray-100' : 'bg-white shadow-sm'}`}>
+                                     {icon}
+                                 </div>
+                                 <div className="flex-1">
+                                     <div className="flex justify-between items-start">
+                                         <h4 className={`font-bold text-sm ${notification.isRead ? 'text-gray-900' : 'text-brand-900'}`}>{notification.title}</h4>
+                                         <span className="text-[10px] text-gray-400">{new Date(notification.timestamp).toLocaleDateString()}</span>
+                                     </div>
+                                     <p className="text-sm text-gray-600 mt-1 mb-2">{notification.message}</p>
+                                     
+                                     {/* Action Buttons */}
+                                     {notification.type === NotificationType.FRIEND_REQUEST && notification.actionStatus === 'PENDING' && (
+                                         <div className="flex space-x-2 mt-2">
+                                             <button 
+                                                onClick={() => handleNotificationAction(notification, 'ACCEPT')}
+                                                className="bg-brand-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-brand-700"
+                                             >
+                                                Accept Request
+                                             </button>
+                                             <button 
+                                                onClick={() => handleNotificationAction(notification, 'REJECT')}
+                                                className="bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-gray-200"
+                                             >
+                                                Decline
+                                             </button>
+                                         </div>
+                                     )}
+
+                                     {notification.type === NotificationType.EVENT_INVITE && notification.actionStatus === 'PENDING' && (
+                                         <div className="flex space-x-2 mt-2">
+                                             <button 
+                                                onClick={() => handleNotificationAction(notification, 'ACCEPT')}
+                                                className="bg-orange-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-orange-600 flex items-center"
+                                             >
+                                                <Calendar size={12} className="mr-1" /> Add to Board
+                                             </button>
+                                             <button 
+                                                onClick={() => handleMarkAsRead(notification.id)}
+                                                className="bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-gray-200"
+                                             >
+                                                Dismiss
+                                             </button>
+                                         </div>
+                                     )}
+
+                                     {notification.actionStatus === 'ACCEPTED' && (
+                                         <p className="text-xs text-green-600 font-bold mt-2 flex items-center"><Check size={12} className="mr-1" /> Accepted</p>
+                                     )}
+                                     
+                                     {notification.actionStatus === 'REJECTED' && (
+                                         <p className="text-xs text-red-500 font-medium mt-2">Declined</p>
+                                     )}
+
+                                     {notification.type === NotificationType.MESSAGE && !notification.isRead && (
+                                         <button onClick={() => handleMarkAsRead(notification.id)} className="text-xs text-brand-600 font-bold mt-2">Mark as Read</button>
+                                     )}
+                                 </div>
+                             </div>
+                         </div>
+                     );
+                 })}
+             </div>
+         ) : (
+             <div className="text-center py-12 text-gray-400">
+                 <Bell size={48} className="mx-auto mb-4 opacity-20" />
+                 <p>No notifications yet.</p>
+             </div>
+         )}
+      </div>
+  );
+
   // Render Components
   const renderLogin = () => (
     <div className="min-h-screen bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center p-4">
@@ -1219,6 +1348,15 @@ const App: React.FC = () => {
         GiftCircle
       </h1>
       <div className="flex items-center space-x-3">
+        <button 
+           onClick={() => setView('NOTIFICATIONS')}
+           className="relative p-2 text-gray-400 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-colors"
+        >
+            <Bell size={20} />
+            {unreadNotificationsCount > 0 && (
+                <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-white"></span>
+            )}
+        </button>
         <div className="flex items-center space-x-2">
           <span className="text-sm font-medium text-gray-600 hidden sm:block">Hi, {me.firstName}</span>
           <img onClick={() => setView('MY_PROFILE')} src={me.avatar} alt="avatar" className="w-8 h-8 rounded-full border border-gray-200 cursor-pointer" />
@@ -1242,7 +1380,7 @@ const App: React.FC = () => {
             <Home size={24} />
             <span className="text-xs">Home</span>
             </button>
-            <button onClick={() => setView('FRIENDS')} className={`flex flex-col items-center space-y-1 ${view === 'FRIENDS' || view === 'CIRCLE_DETAIL' || (view === 'PROFILE' && selectedFriendId) || view === 'GIFT_FLOW' ? 'text-brand-600' : 'text-gray-400'}`}>
+            <button onClick={() => setView('FRIENDS')} className={`flex flex-col items-center space-y-1 ${view === 'FRIENDS' || view === 'CIRCLE_DETAIL' || (view === 'PROFILE' && selectedFriendId) || view === 'GIFT_FLOW' || view === 'FRIEND_REQUESTS' ? 'text-brand-600' : 'text-gray-400'}`}>
             <Users size={24} />
             <span className="text-xs">Friends</span>
             </button>
@@ -2250,7 +2388,7 @@ const App: React.FC = () => {
       <main className="pb-24 pt-4">
         {view === 'HOME' && (
           <>
-            {renderEvents(activeEvents)}
+            {renderEvents(myActiveEvents)}
             <div className="px-4">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-bold text-gray-800">My Wishlist</h2>
@@ -2445,6 +2583,8 @@ const App: React.FC = () => {
         {view === 'EVENT_DETAIL' && renderEventDetail()}
 
         {view === 'EVENT_PLANNING' && renderEventPlanning()}
+        
+        {view === 'NOTIFICATIONS' && renderNotifications()}
 
         {view === 'PROFILE' && selectedFriendId && (
           <>
