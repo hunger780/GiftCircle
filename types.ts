@@ -1,6 +1,7 @@
 
 
 
+
 export enum ContributionType {
   LOCKED = 'LOCKED', // Only for the specific product
   FREE = 'FREE'     // User can use cash for anything
@@ -80,6 +81,7 @@ export interface User {
   blockedUserIds: string[]; // array of blocked user IDs
   familyMemberIds: string[]; // array of GiftCircle IDs
   acceptedEventIds: string[]; // Events accepted via notification
+  hiddenEventIds: string[]; // Events manually hidden by user
   settings: UserSettings;
 }
 

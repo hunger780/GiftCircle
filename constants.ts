@@ -2,6 +2,7 @@
 
 
 
+
 import { User, WishlistItem, Event, EventType, FriendRequest, GiftCircle, Vendor, Notification, NotificationType } from './types.ts';
 
 export const MOCK_CURRENT_USER_ID = 'u1';
@@ -20,6 +21,7 @@ export const MOCK_USERS: User[] = [
     blockedUserIds: [],
     familyMemberIds: ['u2'],
     acceptedEventIds: [],
+    hiddenEventIds: [],
     settings: {
       defaultGiftAmount: 25,
       maxGiftAmount: 500,
@@ -40,6 +42,7 @@ export const MOCK_USERS: User[] = [
     blockedUserIds: [],
     familyMemberIds: ['u1'],
     acceptedEventIds: [],
+    hiddenEventIds: [],
     settings: {
       defaultGiftAmount: 20,
       maxGiftAmount: 200,
@@ -60,6 +63,7 @@ export const MOCK_USERS: User[] = [
     blockedUserIds: [],
     familyMemberIds: [],
     acceptedEventIds: [],
+    hiddenEventIds: [],
     settings: {
       defaultGiftAmount: 15,
       maxGiftAmount: 100,
@@ -80,6 +84,7 @@ export const MOCK_USERS: User[] = [
     blockedUserIds: [],
     familyMemberIds: [],
     acceptedEventIds: [],
+    hiddenEventIds: [],
     settings: {
       defaultGiftAmount: 30,
       maxGiftAmount: 1000,
@@ -100,6 +105,7 @@ export const MOCK_USERS: User[] = [
     blockedUserIds: [],
     familyMemberIds: [],
     acceptedEventIds: [],
+    hiddenEventIds: [],
     settings: {
       defaultGiftAmount: 20,
       maxGiftAmount: 100,
