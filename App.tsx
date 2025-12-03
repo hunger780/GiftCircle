@@ -1,6 +1,10 @@
 
 
 
+
+
+
+
 import React, { useState, useMemo } from 'react';
 import { Home, Users, PlusCircle, User as UserIcon, Gift, ExternalLink, Calendar, Share2, Search, ArrowLeft, DollarSign, LogOut, Cake, Heart, Baby, PartyPopper, Home as HomeIcon, Settings, Save, Trash2, CheckCircle, Circle, X, ShoppingBag, AlertCircle, Wallet, Landmark, CreditCard, RefreshCcw, Archive, ChevronRight, Lock, Unlock, Phone, UserPlus, Clock, Check, XCircle, Copy, Contact, Ban, MessageCircle, Target, Link as LinkIcon, PenTool, Loader2, MapPin, Star, PhoneCall, Mail, Filter, CalendarRange, Bell } from 'lucide-react';
 import { WishlistItem, User, ContributionType, ViewState, Event, EventType, WishlistStatus, FriendRequest, GiftCircle, Vendor, Notification, NotificationType } from './types.ts';
@@ -818,7 +822,8 @@ const App: React.FC = () => {
       firstName: formData.get('firstName') as string,
       lastName: formData.get('lastName') as string,
       name: `${formData.get('firstName')} ${formData.get('lastName')}`,
-      age: Number(formData.get('age')),
+      dob: formData.get('dob') as string,
+      email: formData.get('email') as string,
       sex: formData.get('sex') as any,
       phoneNumber: formData.get('phoneNumber') as string,
       avatar: `https://ui-avatars.com/api/?name=${formData.get('firstName')}+${formData.get('lastName')}&background=random`,
@@ -987,7 +992,8 @@ const App: React.FC = () => {
       firstName: formData.get('firstName') as string,
       lastName: formData.get('lastName') as string,
       name: `${formData.get('firstName')} ${formData.get('lastName')}`,
-      age: Number(formData.get('age')),
+      dob: formData.get('dob') as string,
+      email: formData.get('email') as string,
       sex: formData.get('sex') as 'Male' | 'Female' | 'Other',
       phoneNumber: formData.get('phoneNumber') as string,
     });
@@ -1009,28 +1015,6 @@ const App: React.FC = () => {
       }
     });
     setView('MY_PROFILE');
-  };
-
-  const addFamilyMember = (e: React.FormEvent) => {
-    e.preventDefault();
-    const form = e.target as HTMLFormElement;
-    const formData = new FormData(form);
-    const id = formData.get('familyId') as string;
-    
-    if (id && !currentUserData.familyMemberIds.includes(id)) {
-        setCurrentUserData({
-            ...currentUserData,
-            familyMemberIds: [...currentUserData.familyMemberIds, id]
-        });
-        form.reset();
-    }
-  };
-
-  const removeFamilyMember = (id: string) => {
-      setCurrentUserData({
-          ...currentUserData,
-          familyMemberIds: currentUserData.familyMemberIds.filter(fid => fid !== id)
-      });
   };
 
   const handleSendFriendRequest = (id: string) => {
@@ -1355,8 +1339,8 @@ const App: React.FC = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-gray-500 mb-1">Age</label>
-              <input name="age" type="number" className="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500" required />
+              <label className="block text-xs font-bold text-gray-500 mb-1">Date of Birth</label>
+              <input name="dob" type="date" className="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500" required />
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-500 mb-1">Sex</label>
@@ -2228,8 +2212,7 @@ const App: React.FC = () => {
   );
 
   const renderMyProfile = () => {
-    const familyMembers = me.familyMemberIds.map(id => getUser(id)).filter(Boolean);
-
+    
     return (
         <div className="px-4 pb-24">
             <div className="flex justify-between items-center mb-6">
@@ -2303,10 +2286,20 @@ const App: React.FC = () => {
                     <h3 className="font-bold text-gray-800 mb-4 flex items-center">
                         <UserIcon size={18} className="mr-2 text-brand-500" /> Personal Details
                     </h3>
+                    
+                    {/* Email */}
+                    <div className="mb-4">
+                        <label className="block text-xs font-bold text-gray-500 mb-1">Email Address</label>
+                        <div className="relative">
+                            <Mail className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                            <input name="email" type="email" defaultValue={me.email} className="w-full pl-8 p-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500" />
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-bold text-gray-500 mb-1">Age</label>
-                            <input name="age" type="number" defaultValue={me.age} className="w-full p-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500" />
+                            <label className="block text-xs font-bold text-gray-500 mb-1">Date of Birth</label>
+                            <input name="dob" type="date" defaultValue={me.dob} className="w-full p-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500" />
                         </div>
                         <div>
                             <label className="block text-xs font-bold text-gray-500 mb-1">Sex</label>
@@ -2323,36 +2316,6 @@ const App: React.FC = () => {
                             <Phone className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                             <input name="phoneNumber" type="tel" defaultValue={me.phoneNumber} className="w-full pl-8 p-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500" placeholder="+1 555-000-0000" />
                         </div>
-                    </div>
-                </div>
-
-                {/* Family Card */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                    <h3 className="font-bold text-gray-800 mb-4 flex items-center">
-                        <Users size={18} className="mr-2 text-brand-500" /> Family Members
-                    </h3>
-                    
-                    <div className="space-y-3 mb-4">
-                        {familyMembers.length > 0 ? familyMembers.map(member => (
-                            <div key={member?.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                                <div className="flex items-center space-x-3">
-                                    <img src={member?.avatar} alt={member?.name} className="w-8 h-8 rounded-full" />
-                                    <span className="font-medium text-sm text-gray-900">{member?.name}</span>
-                                </div>
-                                <button type="button" onClick={() => removeFamilyMember(member!.id)} className="text-red-400 hover:text-red-600">
-                                    <Trash2 size={16} />
-                                </button>
-                            </div>
-                        )) : (
-                            <p className="text-sm text-gray-400 italic">No family members added.</p>
-                        )}
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                        <input name="familyId" placeholder="Enter GiftCircle ID (e.g. u2)" className="flex-1 p-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500 text-sm" />
-                        <button type="button" onClick={addFamilyMember} className="bg-brand-100 text-brand-600 p-2 rounded-lg hover:bg-brand-200">
-                            <PlusCircle size={20} />
-                        </button>
                     </div>
                 </div>
 

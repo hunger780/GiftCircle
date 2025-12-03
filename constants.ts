@@ -3,6 +3,8 @@
 
 
 
+
+
 import { User, WishlistItem, Event, EventType, FriendRequest, GiftCircle, Vendor, Notification, NotificationType } from './types.ts';
 
 export const MOCK_CURRENT_USER_ID = 'u1';
@@ -13,7 +15,8 @@ export const MOCK_USERS: User[] = [
     firstName: 'Alex',
     lastName: 'Johnson',
     name: 'Alex Johnson',
-    age: 29,
+    dob: '1995-05-15',
+    email: 'alex.j@example.com',
     sex: 'Male',
     phoneNumber: '555-0101',
     avatar: 'https://picsum.photos/seed/u1/100/100',
@@ -34,7 +37,8 @@ export const MOCK_USERS: User[] = [
     firstName: 'Sarah',
     lastName: 'Miller',
     name: 'Sarah Miller',
-    age: 28,
+    dob: '1996-08-22',
+    email: 'sarah.m@example.com',
     sex: 'Female',
     phoneNumber: '555-0202',
     avatar: 'https://picsum.photos/seed/u2/100/100',
@@ -55,7 +59,8 @@ export const MOCK_USERS: User[] = [
     firstName: 'David',
     lastName: 'Chen',
     name: 'David Chen',
-    age: 30,
+    dob: '1994-03-10',
+    email: 'david.c@example.com',
     sex: 'Male',
     phoneNumber: '555-0303',
     avatar: 'https://picsum.photos/seed/u3/100/100',
@@ -76,7 +81,8 @@ export const MOCK_USERS: User[] = [
     firstName: 'Emily',
     lastName: 'Davis',
     name: 'Emily Davis',
-    age: 27,
+    dob: '1997-11-05',
+    email: 'emily.d@example.com',
     sex: 'Female',
     phoneNumber: '555-0404',
     avatar: 'https://picsum.photos/seed/u4/100/100',
@@ -97,7 +103,8 @@ export const MOCK_USERS: User[] = [
     firstName: 'Alice',
     lastName: 'Wonder',
     name: 'Alice Wonder',
-    age: 26,
+    dob: '1998-01-30',
+    email: 'alice.w@example.com',
     sex: 'Female',
     phoneNumber: '555-0505',
     avatar: 'https://picsum.photos/seed/u5/100/100',

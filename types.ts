@@ -2,6 +2,7 @@
 
 
 
+
 export enum ContributionType {
   LOCKED = 'LOCKED', // Only for the specific product
   FREE = 'FREE'     // User can use cash for anything
@@ -73,7 +74,8 @@ export interface User {
   firstName: string;
   lastName: string;
   name: string; // Computed or display name
-  age?: number;
+  dob?: string; // Date of Birth YYYY-MM-DD
+  email?: string;
   sex?: 'Male' | 'Female' | 'Other';
   phoneNumber?: string;
   avatar: string;
