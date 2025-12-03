@@ -1,10 +1,3 @@
-
-
-
-
-
-
-
 import React, { useState, useMemo } from 'react';
 import { Home, Users, PlusCircle, User as UserIcon, Gift, ExternalLink, Calendar, Share2, Search, ArrowLeft, DollarSign, LogOut, Cake, Heart, Baby, PartyPopper, Home as HomeIcon, Settings, Save, Trash2, CheckCircle, Circle, X, ShoppingBag, AlertCircle, Wallet, Landmark, CreditCard, RefreshCcw, Archive, ChevronRight, Lock, Unlock, Phone, UserPlus, Clock, Check, XCircle, Copy, Contact, Ban, MessageCircle, Target, Link as LinkIcon, PenTool, Loader2, MapPin, Star, PhoneCall, Mail, Filter, CalendarRange, Bell } from 'lucide-react';
 import { WishlistItem, User, ContributionType, ViewState, Event, EventType, WishlistStatus, FriendRequest, GiftCircle, Vendor, Notification, NotificationType } from './types.ts';
@@ -940,7 +933,8 @@ const App: React.FC = () => {
           type: eventData.type as EventType,
           date: eventData.date!,
           description: eventData.description || '',
-          inviteeIds: []
+          inviteeIds: [],
+          status: 'ACTIVE'
       };
 
       setEvents([...events, newEvent]);
@@ -980,6 +974,12 @@ const App: React.FC = () => {
       }
       return e;
     }));
+  };
+
+  const handleCancelEvent = (eventId: string) => {
+    if (window.confirm("Are you sure you want to cancel this event? This action cannot be undone and guests will be notified.")) {
+       setEvents(events.map(e => e.id === eventId ? { ...e, status: 'CANCELLED' } : e));
+    }
   };
 
   const handleSaveProfile = (e: React.FormEvent) => {
@@ -1639,8 +1639,14 @@ const App: React.FC = () => {
                       <div 
                         key={e.id} 
                         onClick={() => handleEventClick(e.id)}
-                        className="flex-shrink-0 w-64 bg-gradient-to-br from-brand-600 to-purple-600 rounded-2xl p-4 text-white shadow-lg relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:scale-[1.02]"
+                        className={`flex-shrink-0 w-64 rounded-2xl p-4 text-white shadow-lg relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:scale-[1.02] ${e.status === 'CANCELLED' ? 'bg-gray-500' : 'bg-gradient-to-br from-brand-600 to-purple-600'}`}
                       >
+                          {e.status === 'CANCELLED' && (
+                              <div className="absolute inset-0 bg-black/40 z-10 flex items-center justify-center pointer-events-none">
+                                  <span className="border-2 border-white px-3 py-1 text-xl font-bold transform -rotate-12 opacity-80">CANCELLED</span>
+                              </div>
+                          )}
+
                           {/* Hide/Remove Button - Only show for events not created by me */}
                           {e.userId !== me.id && (
                               <button 
@@ -1799,6 +1805,7 @@ const App: React.FC = () => {
      const linkedWishes = wishlist.filter(w => w.eventId === event.id && w.status === 'ACTIVE');
      const invitees = event.inviteeIds?.map(id => getUser(id)).filter(Boolean) || [];
      const isOwner = event.userId === me.id;
+     const isCancelled = event.status === 'CANCELLED';
 
      return (
         <div className="px-4 pb-24">
@@ -1810,7 +1817,12 @@ const App: React.FC = () => {
              </div>
 
              {/* Event Header */}
-             <div className="bg-gradient-to-br from-brand-600 to-purple-600 rounded-2xl p-6 text-white shadow-lg mb-8 relative overflow-hidden">
+             <div className={`bg-gradient-to-br from-brand-600 to-purple-600 rounded-2xl p-6 text-white shadow-lg mb-8 relative overflow-hidden ${isCancelled ? 'grayscale opacity-90' : ''}`}>
+                  {isCancelled && (
+                    <div className="absolute inset-0 bg-black/50 z-10 flex items-center justify-center pointer-events-none">
+                        <span className="border-4 border-white px-6 py-2 text-3xl font-extrabold transform -rotate-12 tracking-widest opacity-80">CANCELLED</span>
+                    </div>
+                  )}
                   <div className="absolute top-0 right-0 p-8 opacity-10 scale-150">
                     {getEventIcon(event.type)}
                   </div>
@@ -1833,7 +1845,7 @@ const App: React.FC = () => {
                     <Users size={18} className="mr-2 text-brand-500" /> Guest List
                     <span className="ml-2 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">{invitees.length}</span>
                   </h3>
-                  {isOwner && (
+                  {isOwner && !isCancelled && (
                     <button 
                       onClick={() => setShowEventInviteModal(true)}
                       className="text-brand-600 text-xs font-bold flex items-center bg-brand-50 px-3 py-1.5 rounded-lg hover:bg-brand-100"
@@ -1883,6 +1895,20 @@ const App: React.FC = () => {
                     <p className="text-sm text-gray-500 italic">No wishes linked to this event yet.</p>
                  )}
              </div>
+
+             {/* Cancel Event Button */}
+             {isOwner && !isCancelled && (
+               <div className="mt-8 pt-6 border-t border-gray-200">
+                  <button 
+                    onClick={() => handleCancelEvent(event.id)}
+                    className="w-full py-4 bg-red-50 text-red-600 rounded-xl font-bold flex items-center justify-center hover:bg-red-100 transition-colors"
+                  >
+                    <Trash2 size={20} className="mr-2" />
+                    Cancel Event
+                  </button>
+                  <p className="text-center text-xs text-gray-400 mt-2">Guests will be notified if you cancel.</p>
+               </div>
+             )}
         </div>
      );
   };

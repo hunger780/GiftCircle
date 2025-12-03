@@ -1,10 +1,3 @@
-
-
-
-
-
-
-
 import { User, WishlistItem, Event, EventType, FriendRequest, GiftCircle, Vendor, Notification, NotificationType } from './types.ts';
 
 export const MOCK_CURRENT_USER_ID = 'u1';
@@ -130,7 +123,8 @@ export const INITIAL_EVENTS: Event[] = [
     date: '2024-11-15',
     description: "Turning the big 3-0! Join me for drinks.",
     type: EventType.BIRTHDAY,
-    inviteeIds: ['u2', 'u3']
+    inviteeIds: ['u2', 'u3'],
+    status: 'ACTIVE'
   },
   {
     id: 'e2',
@@ -139,7 +133,8 @@ export const INITIAL_EVENTS: Event[] = [
     date: '2024-10-20',
     description: "Finally got my own place.",
     type: EventType.HOUSEWARMING,
-    inviteeIds: ['u1']
+    inviteeIds: ['u1'],
+    status: 'ACTIVE'
   }
 ];
 
