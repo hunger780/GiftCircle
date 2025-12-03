@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Home, Users, PlusCircle, User as UserIcon, Gift, ExternalLink, Calendar, Share2, Search, ArrowLeft, DollarSign, LogOut, Cake, Heart, Baby, PartyPopper, Home as HomeIcon, Settings, Save, Trash2, CheckCircle, Circle, X, ShoppingBag, AlertCircle, Wallet, Landmark, CreditCard, RefreshCcw, Archive, ChevronRight, Lock, Unlock, Phone, UserPlus, Clock, Check, XCircle, Copy, Contact, Ban, MessageCircle, Target, Link as LinkIcon, PenTool, Loader2, MapPin, Star, PhoneCall, Mail, Filter, CalendarRange, Bell } from 'lucide-react';
 import { WishlistItem, User, ContributionType, ViewState, Event, EventType, WishlistStatus, FriendRequest, GiftCircle, Vendor, Notification, NotificationType } from './types.ts';
-import { MOCK_USERS, INITIAL_WISHLIST, MOCK_CURRENT_USER_ID, INITIAL_EVENTS, INITIAL_FRIEND_REQUESTS, INITIAL_CIRCLES, MOCK_VENDORS, INITIAL_NOTIFICATIONS } from './constants.ts';
+import { MOCK_USERS, INITIAL_WISHLIST, MOCK_CURRENT_USER_ID, INITIAL_EVENTS, INITIAL_FRIEND_REQUESTS, INITIAL_CIRCLES, MOCK_VENDORS, INITIAL_NOTIFICATIONS } from './mockData.ts';
 import { ContributionModal } from './components/ContributionModal.tsx';
 import { WishDetailModal } from './components/WishDetailModal.tsx';
 

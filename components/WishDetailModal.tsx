@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { WishlistItem, ContributionType } from '../types.ts';
-import { MOCK_USERS } from '../constants.ts';
+import { MOCK_USERS } from '../mockData.ts';
 import { X, Lock, Unlock, User as UserIcon, Calendar, DollarSign, EyeOff, UserX } from 'lucide-react';
 
 interface Props {
