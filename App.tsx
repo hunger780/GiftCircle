@@ -1865,6 +1865,58 @@ const App: React.FC = () => {
                   <p className="opacity-90 leading-relaxed">{event.description}</p>
              </div>
 
+             {/* Linked Wishes */}
+             <div className="mb-8">
+                 <h3 className="font-bold text-gray-800 mb-3 flex justify-between items-center">
+                     <span>Linked Wishes</span>
+                     <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{linkedWishes.length}</span>
+                 </h3>
+                 {linkedWishes.length > 0 ? (
+                    <div className="flex space-x-3 overflow-x-auto pb-2 scrollbar-hide">
+                        {linkedWishes.map(w => {
+                            const isItemOwner = w.userId === me.id;
+                            const remaining = w.price - w.fundedAmount;
+                            return (
+                                <div 
+                                    key={w.id} 
+                                    onClick={() => setViewingItemId(w.id)}
+                                    className="flex-shrink-0 w-48 bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col cursor-pointer hover:border-brand-300 transition-all group"
+                                >
+                                    <div className="relative h-28 mb-2 overflow-hidden rounded-lg">
+                                        <img src={w.imageUrl} className="w-full h-full object-cover transition-transform group-hover:scale-105" alt={w.title} />
+                                    </div>
+                                    <p className="font-bold text-sm text-gray-900 truncate mb-1">{w.title}</p>
+                                    
+                                    <div className="w-full bg-gray-100 rounded-full h-1.5 mb-2">
+                                        <div className="bg-brand-500 h-1.5 rounded-full" style={{ width: `${Math.min((w.fundedAmount / w.price) * 100, 100)}%` }}></div>
+                                    </div>
+                                    
+                                    <div className="flex justify-between items-center text-xs mb-2">
+                                        <span className="text-gray-500">{Math.round((w.fundedAmount / w.price) * 100)}%</span>
+                                        <span className="font-bold text-brand-600">{currencySymbol}{remaining} left</span>
+                                    </div>
+
+                                    {!isItemOwner && w.fundedAmount < w.price ? (
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); setContributingItem(w); }}
+                                            className="mt-auto w-full bg-gray-900 text-white py-2 rounded-lg text-xs font-bold flex items-center justify-center hover:bg-gray-800 transition-colors shadow-sm"
+                                        >
+                                            <DollarSign size={14} className="mr-1" /> Contribute
+                                        </button>
+                                    ) : (
+                                        <div className="mt-auto w-full py-2 bg-gray-50 text-gray-400 rounded-lg text-xs font-bold text-center border border-gray-100">
+                                            {isItemOwner ? 'Manage' : 'Fully Funded'}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                 ) : (
+                    <p className="text-sm text-gray-500 italic">No wishes linked to this event yet.</p>
+                 )}
+             </div>
+
              {/* Visibility Toggle for Owner */}
              {isOwner && !isCancelled && (
                  <div className="bg-white px-5 py-3 rounded-2xl shadow-sm border border-gray-100 mb-6 flex items-center justify-between">
@@ -1921,27 +1973,6 @@ const App: React.FC = () => {
                 ) : (
                   <p className="text-sm text-gray-400 italic">No guests invited yet.</p>
                 )}
-             </div>
-
-             {/* Linked Wishes */}
-             <div className="mb-8">
-                 <h3 className="font-bold text-gray-800 mb-3 flex justify-between items-center">
-                     <span>Linked Wishes</span>
-                     <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{linkedWishes.length}</span>
-                 </h3>
-                 {linkedWishes.length > 0 ? (
-                    <div className="flex space-x-3 overflow-x-auto pb-2 scrollbar-hide">
-                        {linkedWishes.map(w => (
-                            <div key={w.id} className="flex-shrink-0 w-40 bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
-                                <img src={w.imageUrl} className="w-full h-24 object-cover rounded-lg mb-2" />
-                                <p className="font-bold text-sm text-gray-900 truncate">{w.title}</p>
-                                <p className="text-xs text-brand-600 font-bold">{currencySymbol}{w.fundedAmount} / {currencySymbol}{w.price}</p>
-                            </div>
-                        ))}
-                    </div>
-                 ) : (
-                    <p className="text-sm text-gray-500 italic">No wishes linked to this event yet.</p>
-                 )}
              </div>
 
              {/* Cancel Event Button */}
