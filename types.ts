@@ -1,3 +1,4 @@
+
 export enum ContributionType {
   LOCKED = 'LOCKED', // Only for the specific product
   FREE = 'FREE'     // User can use cash for anything
@@ -47,6 +48,7 @@ export interface Event {
   type: EventType;
   inviteeIds: string[];
   status?: 'ACTIVE' | 'CANCELLED';
+  visibility: 'PUBLIC' | 'PRIVATE';
 }
 
 export interface GiftCircle {

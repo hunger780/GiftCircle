@@ -1,9 +1,11 @@
+
 import React, { useState, useMemo } from 'react';
-import { Home, Users, PlusCircle, User as UserIcon, Gift, ExternalLink, Calendar, Share2, Search, ArrowLeft, DollarSign, LogOut, Cake, Heart, Baby, PartyPopper, Home as HomeIcon, Settings, Save, Trash2, CheckCircle, Circle, X, ShoppingBag, AlertCircle, Wallet, Landmark, CreditCard, RefreshCcw, Archive, ChevronRight, Lock, Unlock, Phone, UserPlus, Clock, Check, XCircle, Copy, Contact, Ban, MessageCircle, Target, Link as LinkIcon, PenTool, Loader2, MapPin, Star, PhoneCall, Mail, Filter, CalendarRange, Bell } from 'lucide-react';
+import { Home, Users, PlusCircle, User as UserIcon, Gift, ExternalLink, Calendar, Share2, Search, ArrowLeft, DollarSign, LogOut, Cake, Heart, Baby, PartyPopper, Home as HomeIcon, Settings, Save, Trash2, CheckCircle, Circle, X, ShoppingBag, AlertCircle, Wallet, Landmark, CreditCard, RefreshCcw, Archive, ChevronRight, Lock, Unlock, Phone, UserPlus, Clock, Check, XCircle, Copy, Contact, Ban, MessageCircle, Target, Link as LinkIcon, PenTool, Loader2, MapPin, Star, PhoneCall, Mail, Filter, CalendarRange, Bell, Globe } from 'lucide-react';
 import { WishlistItem, User, ContributionType, ViewState, Event, EventType, WishlistStatus, FriendRequest, GiftCircle, Vendor, Notification, NotificationType } from './types.ts';
 import { MOCK_USERS, INITIAL_WISHLIST, MOCK_CURRENT_USER_ID, INITIAL_EVENTS, INITIAL_FRIEND_REQUESTS, INITIAL_CIRCLES, MOCK_VENDORS, INITIAL_NOTIFICATIONS } from './mockData.ts';
 import { ContributionModal } from './components/ContributionModal.tsx';
 import { WishDetailModal } from './components/WishDetailModal.tsx';
+import { GiftAssistant } from './components/GiftAssistant.tsx';
 
 // Helper for Currency
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -115,6 +117,7 @@ const CreateEventView: React.FC<CreateEventViewProps> = ({ onBack, onCreate, use
   const [type, setType] = useState<EventType>(EventType.BIRTHDAY);
   const [date, setDate] = useState('');
   const [description, setDescription] = useState('');
+  const [visibility, setVisibility] = useState<'PUBLIC' | 'PRIVATE'>('PRIVATE');
   
   // State for selecting existing wishlist items
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -151,7 +154,7 @@ const CreateEventView: React.FC<CreateEventViewProps> = ({ onBack, onCreate, use
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onCreate(
-      { title, type, date, description },
+      { title, type, date, description, visibility },
       Array.from(selectedIds),
       newItems
     );
@@ -220,6 +223,22 @@ const CreateEventView: React.FC<CreateEventViewProps> = ({ onBack, onCreate, use
               placeholder="What's the occasion?"
               className="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-brand-500"
             />
+          </div>
+
+          {/* Visibility Toggle */}
+          <div>
+             <label className="block text-sm font-medium text-gray-700 mb-2">Event Visibility</label>
+             <div className="flex items-center space-x-6 p-1">
+               <label className="flex items-center cursor-pointer">
+                  <input type="radio" name="visibility" className="w-4 h-4 accent-brand-600" checked={visibility === 'PRIVATE'} onChange={() => setVisibility('PRIVATE')} />
+                  <span className="ml-2 text-sm text-gray-700 flex items-center"><Lock size={14} className="mr-1"/> Private</span>
+               </label>
+               
+               <label className="flex items-center cursor-pointer">
+                  <input type="radio" name="visibility" className="w-4 h-4 accent-brand-600" checked={visibility === 'PUBLIC'} onChange={() => setVisibility('PUBLIC')} />
+                  <span className="ml-2 text-sm text-gray-700 flex items-center"><Globe size={14} className="mr-1"/> Public</span>
+               </label>
+             </div>
           </div>
         </div>
 
@@ -934,7 +953,8 @@ const App: React.FC = () => {
           date: eventData.date!,
           description: eventData.description || '',
           inviteeIds: [],
-          status: 'ACTIVE'
+          status: 'ACTIVE',
+          visibility: eventData.visibility || 'PRIVATE'
       };
 
       setEvents([...events, newEvent]);
@@ -974,6 +994,10 @@ const App: React.FC = () => {
       }
       return e;
     }));
+  };
+
+  const handleUpdateEventVisibility = (eventId: string, newVisibility: 'PUBLIC' | 'PRIVATE') => {
+      setEvents(events.map(e => e.id === eventId ? { ...e, visibility: newVisibility } : e));
   };
 
   const handleCancelEvent = (eventId: string) => {
@@ -1829,6 +1853,9 @@ const App: React.FC = () => {
                   <div className="flex items-center space-x-2 mb-2 bg-white/20 w-fit px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">
                       {getEventIcon(event.type)}
                       <span>{event.type}</span>
+                      <span className="mx-1 opacity-50">|</span>
+                      {event.visibility === 'PUBLIC' ? <Globe size={12} className="mr-1"/> : <Lock size={12} className="mr-1"/>}
+                      <span>{event.visibility === 'PUBLIC' ? 'Public' : 'Private'}</span>
                   </div>
                   <h1 className="text-3xl font-extrabold mb-2">{event.title}</h1>
                   <p className="text-purple-100 text-lg mb-4 flex items-center">
@@ -1837,6 +1864,27 @@ const App: React.FC = () => {
                   </p>
                   <p className="opacity-90 leading-relaxed">{event.description}</p>
              </div>
+
+             {/* Visibility Toggle for Owner */}
+             {isOwner && !isCancelled && (
+                 <div className="bg-white px-5 py-3 rounded-2xl shadow-sm border border-gray-100 mb-6 flex items-center justify-between">
+                     <div className="flex flex-col">
+                        <h3 className="font-bold text-gray-800 text-sm">Visibility</h3>
+                        <p className="text-[10px] text-gray-400">{event.visibility === 'PUBLIC' ? 'Visible to everyone' : 'Only guests can see'}</p>
+                     </div>
+                     <div className="flex items-center space-x-4">
+                       <label className="flex items-center cursor-pointer">
+                          <input type="radio" name="eventVisibility" className="w-4 h-4 accent-brand-600" checked={event.visibility === 'PRIVATE'} onChange={() => handleUpdateEventVisibility(event.id, 'PRIVATE')} />
+                          <span className="ml-1.5 text-xs font-medium text-gray-700">Private</span>
+                       </label>
+                       
+                       <label className="flex items-center cursor-pointer">
+                          <input type="radio" name="eventVisibility" className="w-4 h-4 accent-brand-600" checked={event.visibility === 'PUBLIC'} onChange={() => handleUpdateEventVisibility(event.id, 'PUBLIC')} />
+                          <span className="ml-1.5 text-xs font-medium text-gray-700">Public</span>
+                       </label>
+                     </div>
+                 </div>
+             )}
 
             {/* Guest List Section */}
              <div className="mb-8 bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
