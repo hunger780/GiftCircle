@@ -1,5 +1,6 @@
 
-import { User, WishlistItem, Event, EventType, FriendRequest, GiftCircle, Vendor, Notification, NotificationType } from './types.ts';
+
+import { User, WishlistItem, Event, EventType, FriendRequest, GiftCircle, Vendor, Notification, NotificationType, ShoppingItem } from './types.ts';
 
 export const MOCK_CURRENT_USER_ID = 'u1';
 
@@ -282,6 +283,81 @@ export const MOCK_VENDORS: Vendor[] = [
         imageUrl: 'https://picsum.photos/seed/hall/200/200',
         distance: '0.8 km'
     }
+];
+
+export const MOCK_SHOPPING_ITEMS: ShoppingItem[] = [
+  {
+    id: 's1',
+    title: 'Party Streamers Pack',
+    price: 15,
+    imageUrl: 'https://picsum.photos/seed/streamers/200/200',
+    category: 'Decor',
+    rating: 4.5,
+    description: 'Colorful streamers for any celebration.'
+  },
+  {
+    id: 's2',
+    title: 'Premium Gift Wrap Set',
+    price: 25,
+    imageUrl: 'https://picsum.photos/seed/giftwrap/200/200',
+    category: 'Supplies',
+    rating: 4.8,
+    description: 'High-quality paper with assorted designs.'
+  },
+  {
+    id: 's3',
+    title: 'LED Fairy Lights',
+    price: 30,
+    imageUrl: 'https://picsum.photos/seed/lights/200/200',
+    category: 'Decor',
+    rating: 4.6,
+    description: 'Warm white lights, 10 meters.'
+  },
+  {
+    id: 's4',
+    title: 'Disposable Tableware Kit',
+    price: 45,
+    imageUrl: 'https://picsum.photos/seed/plates/200/200',
+    category: 'Dining',
+    rating: 4.2,
+    description: 'Plates, cups, and cutlery for 20 guests.'
+  },
+  {
+    id: 's5',
+    title: 'Customizable Banner',
+    price: 20,
+    imageUrl: 'https://picsum.photos/seed/banner/200/200',
+    category: 'Decor',
+    rating: 4.7,
+    description: 'Create your own message.'
+  },
+  {
+    id: 's6',
+    title: 'Party Poppers (10 Pack)',
+    price: 12,
+    imageUrl: 'https://picsum.photos/seed/poppers/200/200',
+    category: 'Fun',
+    rating: 4.3,
+    description: 'Safe and fun for all ages.'
+  },
+   {
+    id: 's7',
+    title: 'Scented Candles Set',
+    price: 35,
+    imageUrl: 'https://picsum.photos/seed/candles/200/200',
+    category: 'Decor',
+    rating: 4.9,
+    description: 'Vanilla, Lavender and Rose scents.'
+  },
+  {
+    id: 's8',
+    title: 'Chocolate Fountain',
+    price: 120,
+    imageUrl: 'https://picsum.photos/seed/chocofountain/200/200',
+    category: 'Dining',
+    rating: 4.1,
+    description: 'Perfect for dessert tables.'
+  }
 ];
 
 export const INITIAL_NOTIFICATIONS: Notification[] = [

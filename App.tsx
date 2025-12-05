@@ -1,8 +1,9 @@
 
+
 import React, { useState, useMemo } from 'react';
-import { Home, Users, PlusCircle, User as UserIcon, Gift, ExternalLink, Calendar, Share2, Search, ArrowLeft, DollarSign, LogOut, Cake, Heart, Baby, PartyPopper, Home as HomeIcon, Settings, Save, Trash2, CheckCircle, Circle, X, ShoppingBag, AlertCircle, Wallet, Landmark, CreditCard, RefreshCcw, Archive, ChevronRight, Lock, Unlock, Phone, UserPlus, Clock, Check, XCircle, Copy, Contact, Ban, MessageCircle, Target, Link as LinkIcon, PenTool, Loader2, MapPin, Star, PhoneCall, Mail, Filter, CalendarRange, Bell, Globe, UserX } from 'lucide-react';
+import { Home, Users, PlusCircle, User as UserIcon, Gift, ExternalLink, Calendar, Share2, Search, ArrowLeft, DollarSign, LogOut, Cake, Heart, Baby, PartyPopper, Home as HomeIcon, Settings, Save, Trash2, CheckCircle, Circle, X, ShoppingBag, AlertCircle, Wallet, Landmark, CreditCard, RefreshCcw, Archive, ChevronRight, Lock, Unlock, Phone, UserPlus, Clock, Check, XCircle, Copy, Contact, Ban, MessageCircle, Target, Link as LinkIcon, PenTool, Loader2, MapPin, Star, PhoneCall, Mail, Filter, CalendarRange, Bell, Globe, UserX, ShoppingCart } from 'lucide-react';
 import { WishlistItem, User, ContributionType, ViewState, Event, EventType, WishlistStatus, FriendRequest, GiftCircle, Vendor, Notification, NotificationType } from './types.ts';
-import { MOCK_USERS, INITIAL_WISHLIST, MOCK_CURRENT_USER_ID, INITIAL_EVENTS, INITIAL_FRIEND_REQUESTS, INITIAL_CIRCLES, MOCK_VENDORS, INITIAL_NOTIFICATIONS } from './mockData.ts';
+import { MOCK_USERS, INITIAL_WISHLIST, MOCK_CURRENT_USER_ID, INITIAL_EVENTS, INITIAL_FRIEND_REQUESTS, INITIAL_CIRCLES, MOCK_VENDORS, INITIAL_NOTIFICATIONS, MOCK_SHOPPING_ITEMS } from './mockData.ts';
 import { ContributionModal } from './components/ContributionModal.tsx';
 import { WishDetailModal } from './components/WishDetailModal.tsx';
 import { GiftAssistant } from './components/GiftAssistant.tsx';
@@ -648,6 +649,10 @@ const App: React.FC = () => {
   const [vendorPincode, setVendorPincode] = useState('');
   const [vendorMinRating, setVendorMinRating] = useState<number>(0);
 
+  // Planning Tab State
+  const [planningTab, setPlanningTab] = useState<'SUPPLIERS' | 'SHOPPING'>('SUPPLIERS');
+  const [shoppingSearch, setShoppingSearch] = useState('');
+
   // New state for friend search
   const [friendSearchQuery, setFriendSearchQuery] = useState('');
 
@@ -768,6 +773,16 @@ const App: React.FC = () => {
       return matchesSearch && matchesPincode && matchesRating;
     });
   }, [vendorSearchQuery, vendorPincode, vendorMinRating]);
+
+  // Filter Shopping Items
+  const filteredShoppingItems = useMemo(() => {
+      if (!shoppingSearch) return MOCK_SHOPPING_ITEMS;
+      const lowerQuery = shoppingSearch.toLowerCase();
+      return MOCK_SHOPPING_ITEMS.filter(item => 
+          item.title.toLowerCase().includes(lowerQuery) ||
+          item.category.toLowerCase().includes(lowerQuery)
+      );
+  }, [shoppingSearch]);
 
   // Calculate Wallet Balances
   const walletBalance = useMemo(() => {
@@ -1738,108 +1753,183 @@ const App: React.FC = () => {
                  <h2 className="text-2xl font-bold text-gray-800 ml-2">Event Planning</h2>
              </div>
 
-             {/* Supplier Search Section */}
-             <div>
-                 <div className="flex items-center space-x-2 mb-4">
-                     <div className="bg-blue-100 p-2 rounded-lg text-blue-600">
-                         <Search size={20} />
-                     </div>
-                     <div>
-                         <h3 className="font-bold text-gray-800 text-lg">Find Local Suppliers</h3>
-                         <p className="text-xs text-gray-500">Search for organizers, venues & more</p>
-                     </div>
-                 </div>
-
-                 {/* Filters Row */}
-                 <div className="flex space-x-2 mb-3">
-                    <div className="relative flex-1">
-                        <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
-                        <input 
-                            className="w-full pl-8 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                            placeholder="Pincode"
-                            value={vendorPincode}
-                            onChange={(e) => setVendorPincode(e.target.value)}
-                        />
-                    </div>
-                    <div className="relative">
-                        <Star className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
-                        <select 
-                            className="pl-8 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none"
-                            value={vendorMinRating}
-                            onChange={(e) => setVendorMinRating(Number(e.target.value))}
-                        >
-                            <option value={0}>Any Rating</option>
-                            <option value={3}>3+ Stars</option>
-                            <option value={4}>4+ Stars</option>
-                            <option value={5}>5 Stars</option>
-                        </select>
-                        <ChevronRight className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 rotate-90" size={12} />
-                    </div>
-                 </div>
-
-                 {/* Search Input */}
-                 <div className="relative mb-4">
-                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                     <input 
-                         className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none shadow-sm transition-all"
-                         placeholder="Try 'Catering', 'Decor', 'Music'..."
-                         value={vendorSearchQuery}
-                         onChange={(e) => setVendorSearchQuery(e.target.value)}
-                     />
-                 </div>
-
-                 {/* Category Filters/Chips */}
-                 <div className="flex space-x-2 mb-4 overflow-x-auto scrollbar-hide">
-                     {['All', 'Venue', 'Catering', 'Decor', 'Organizer'].map(cat => (
-                         <button 
-                            key={cat}
-                            onClick={() => setVendorSearchQuery(cat === 'All' ? '' : cat)}
-                            className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
-                                (cat === 'All' && !vendorSearchQuery) || vendorSearchQuery.includes(cat) 
-                                ? 'bg-blue-600 text-white shadow-md shadow-blue-200' 
-                                : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-                            }`}
-                         >
-                             {cat}
-                         </button>
-                     ))}
-                 </div>
-
-                 {/* Results List */}
-                 <div className="space-y-4">
-                     {filteredVendors.length > 0 ? filteredVendors.map(vendor => (
-                         <div key={vendor.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex space-x-4">
-                             <img src={vendor.imageUrl} alt={vendor.name} className="w-20 h-20 rounded-lg object-cover bg-gray-100" />
-                             <div className="flex-1 min-w-0">
-                                 <div className="flex justify-between items-start">
-                                     <h4 className="font-bold text-gray-900 truncate">{vendor.name}</h4>
-                                     <div className="flex items-center bg-yellow-50 px-1.5 py-0.5 rounded text-xs font-bold text-yellow-700">
-                                         <Star size={10} fill="currentColor" className="mr-1" />
-                                         {vendor.rating}
-                                     </div>
-                                 </div>
-                                 <p className="text-xs text-blue-600 font-medium mb-1">{vendor.type}</p>
-                                 <div className="flex flex-col text-xs text-gray-500 mb-2">
-                                     <div className="flex items-center mb-0.5">
-                                         <MapPin size={12} className="mr-1" />
-                                         <span className="truncate">{vendor.address}</span>
-                                     </div>
-                                     <span className="ml-4 text-gray-400">Pincode: {vendor.pincode} • {vendor.distance}</span>
-                                 </div>
-                                 <button className="text-xs bg-gray-900 text-white px-3 py-1.5 rounded-lg font-bold flex items-center space-x-1 hover:bg-gray-800 transition-colors">
-                                     <PhoneCall size={12} />
-                                     <span>Contact</span>
-                                 </button>
-                             </div>
-                         </div>
-                     )) : (
-                         <div className="text-center py-8 text-gray-400">
-                             <p>No suppliers found matching your criteria.</p>
-                             {(vendorPincode || vendorMinRating > 0) && <p className="text-xs mt-1">Try clearing filters.</p>}
-                         </div>
-                     )}
-                 </div>
+             {/* Tabs */}
+             <div className="bg-white p-1 rounded-xl shadow-sm border border-gray-100 flex mb-4">
+                 <button 
+                    onClick={() => setPlanningTab('SUPPLIERS')}
+                    className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${planningTab === 'SUPPLIERS' ? 'bg-brand-50 text-brand-700' : 'text-gray-500 hover:text-gray-700'}`}
+                 >
+                    Suppliers
+                 </button>
+                 <button 
+                    onClick={() => setPlanningTab('SHOPPING')}
+                    className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${planningTab === 'SHOPPING' ? 'bg-brand-50 text-brand-700' : 'text-gray-500 hover:text-gray-700'}`}
+                 >
+                    Shopping
+                 </button>
              </div>
+
+             {planningTab === 'SUPPLIERS' ? (
+                <div>
+                     <div className="flex items-center space-x-2 mb-4">
+                         <div className="bg-blue-100 p-2 rounded-lg text-blue-600">
+                             <Search size={20} />
+                         </div>
+                         <div>
+                             <h3 className="font-bold text-gray-800 text-lg">Find Local Suppliers</h3>
+                             <p className="text-xs text-gray-500">Search for organizers, venues & more</p>
+                         </div>
+                     </div>
+
+                     {/* Filters Row */}
+                     <div className="flex space-x-2 mb-3">
+                        <div className="relative flex-1">
+                            <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                            <input 
+                                className="w-full pl-8 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                placeholder="Pincode"
+                                value={vendorPincode}
+                                onChange={(e) => setVendorPincode(e.target.value)}
+                            />
+                        </div>
+                        <div className="relative">
+                            <Star className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                            <select 
+                                className="pl-8 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none"
+                                value={vendorMinRating}
+                                onChange={(e) => setVendorMinRating(Number(e.target.value))}
+                            >
+                                <option value={0}>Any Rating</option>
+                                <option value={3}>3+ Stars</option>
+                                <option value={4}>4+ Stars</option>
+                                <option value={5}>5 Stars</option>
+                            </select>
+                            <ChevronRight className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 rotate-90" size={12} />
+                        </div>
+                     </div>
+
+                     {/* Search Input */}
+                     <div className="relative mb-4">
+                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                         <input 
+                             className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none shadow-sm transition-all"
+                             placeholder="Try 'Catering', 'Decor', 'Music'..."
+                             value={vendorSearchQuery}
+                             onChange={(e) => setVendorSearchQuery(e.target.value)}
+                         />
+                     </div>
+
+                     {/* Category Filters/Chips */}
+                     <div className="flex space-x-2 mb-4 overflow-x-auto scrollbar-hide">
+                         {['All', 'Venue', 'Catering', 'Decor', 'Organizer'].map(cat => (
+                             <button 
+                                key={cat}
+                                onClick={() => setVendorSearchQuery(cat === 'All' ? '' : cat)}
+                                className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
+                                    (cat === 'All' && !vendorSearchQuery) || vendorSearchQuery.includes(cat) 
+                                    ? 'bg-blue-600 text-white shadow-md shadow-blue-200' 
+                                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                                }`}
+                             >
+                                 {cat}
+                             </button>
+                         ))}
+                     </div>
+
+                     {/* Results List */}
+                     <div className="space-y-4">
+                         {filteredVendors.length > 0 ? filteredVendors.map(vendor => (
+                             <div key={vendor.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex space-x-4">
+                                 <img src={vendor.imageUrl} alt={vendor.name} className="w-20 h-20 rounded-lg object-cover bg-gray-100" />
+                                 <div className="flex-1 min-w-0">
+                                     <div className="flex justify-between items-start">
+                                         <h4 className="font-bold text-gray-900 truncate">{vendor.name}</h4>
+                                         <div className="flex items-center bg-yellow-50 px-1.5 py-0.5 rounded text-xs font-bold text-yellow-700">
+                                             <Star size={10} fill="currentColor" className="mr-1" />
+                                             {vendor.rating}
+                                         </div>
+                                     </div>
+                                     <p className="text-xs text-blue-600 font-medium mb-1">{vendor.type}</p>
+                                     <div className="flex flex-col text-xs text-gray-500 mb-2">
+                                         <div className="flex items-center mb-0.5">
+                                             <MapPin size={12} className="mr-1" />
+                                             <span className="truncate">{vendor.address}</span>
+                                         </div>
+                                         <span className="ml-4 text-gray-400">Pincode: {vendor.pincode} • {vendor.distance}</span>
+                                     </div>
+                                     <button className="text-xs bg-gray-900 text-white px-3 py-1.5 rounded-lg font-bold flex items-center space-x-1 hover:bg-gray-800 transition-colors">
+                                         <PhoneCall size={12} />
+                                         <span>Contact</span>
+                                     </button>
+                                 </div>
+                             </div>
+                         )) : (
+                             <div className="text-center py-8 text-gray-400">
+                                 <p>No suppliers found matching your criteria.</p>
+                                 {(vendorPincode || vendorMinRating > 0) && <p className="text-xs mt-1">Try clearing filters.</p>}
+                             </div>
+                         )}
+                     </div>
+                </div>
+             ) : (
+                <div className="animate-in fade-in slide-in-from-right duration-200">
+                     <div className="flex items-center space-x-2 mb-4">
+                         <div className="bg-purple-100 p-2 rounded-lg text-purple-600">
+                             <ShoppingCart size={20} />
+                         </div>
+                         <div>
+                             <h3 className="font-bold text-gray-800 text-lg">Shop Supplies</h3>
+                             <p className="text-xs text-gray-500">Decor, gifts & party essentials</p>
+                         </div>
+                     </div>
+
+                    <div className="relative mb-6">
+                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                         <input 
+                             className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none shadow-sm transition-all"
+                             placeholder="Search products..."
+                             value={shoppingSearch}
+                             onChange={(e) => setShoppingSearch(e.target.value)}
+                         />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        {filteredShoppingItems.map(item => (
+                            <div key={item.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+                                <div className="h-32 bg-gray-100 relative">
+                                    <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+                                    <div className="absolute top-2 right-2 bg-white/90 backdrop-blur px-1.5 py-0.5 rounded text-[10px] font-bold shadow-sm">
+                                        ⭐ {item.rating}
+                                    </div>
+                                </div>
+                                <div className="p-3 flex-1 flex flex-col">
+                                    <h4 className="font-bold text-gray-900 text-sm leading-tight mb-1 line-clamp-2">{item.title}</h4>
+                                    <p className="text-xs text-gray-500 mb-2">{item.category}</p>
+                                    <p className="text-[10px] text-gray-400 mb-2 line-clamp-2">{item.description}</p>
+                                    
+                                    <div className="mt-auto flex justify-between items-center">
+                                        <span className="font-bold text-purple-600">{currencySymbol}{item.price}</span>
+                                        <button 
+                                            onClick={() => alert(`Added ${item.title} to wishlist!`)}
+                                            className="bg-gray-900 text-white p-2 rounded-lg hover:bg-gray-700 transition-colors"
+                                            title="Add to Wishlist"
+                                        >
+                                            <PlusCircle size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    
+                    {filteredShoppingItems.length === 0 && (
+                        <div className="text-center py-10 text-gray-400">
+                             <ShoppingBag size={48} className="mx-auto mb-2 opacity-20" />
+                             <p>No products found.</p>
+                        </div>
+                    )}
+                </div>
+             )}
         </div>
     );
   };

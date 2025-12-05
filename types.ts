@@ -114,6 +114,16 @@ export interface Vendor {
   distance: string;
 }
 
+export interface ShoppingItem {
+  id: string;
+  title: string;
+  price: number;
+  imageUrl: string;
+  category: string;
+  rating: number;
+  description: string;
+}
+
 export enum NotificationType {
   MESSAGE = 'MESSAGE',
   FRIEND_REQUEST = 'FRIEND_REQUEST',
