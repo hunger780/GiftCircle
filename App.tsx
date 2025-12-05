@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Home, Users, PlusCircle, User as UserIcon, Gift, ExternalLink, Calendar, Share2, Search, ArrowLeft, DollarSign, LogOut, Cake, Heart, Baby, PartyPopper, Home as HomeIcon, Settings, Save, Trash2, CheckCircle, Circle, X, ShoppingBag, AlertCircle, Wallet, Landmark, CreditCard, RefreshCcw, Archive, ChevronRight, Lock, Unlock, Phone, UserPlus, Clock, Check, XCircle, Copy, Contact, Ban, MessageCircle, Target, Link as LinkIcon, PenTool, Loader2, MapPin, Star, PhoneCall, Mail, Filter, CalendarRange, Bell, Globe } from 'lucide-react';
+import { Home, Users, PlusCircle, User as UserIcon, Gift, ExternalLink, Calendar, Share2, Search, ArrowLeft, DollarSign, LogOut, Cake, Heart, Baby, PartyPopper, Home as HomeIcon, Settings, Save, Trash2, CheckCircle, Circle, X, ShoppingBag, AlertCircle, Wallet, Landmark, CreditCard, RefreshCcw, Archive, ChevronRight, Lock, Unlock, Phone, UserPlus, Clock, Check, XCircle, Copy, Contact, Ban, MessageCircle, Target, Link as LinkIcon, PenTool, Loader2, MapPin, Star, PhoneCall, Mail, Filter, CalendarRange, Bell, Globe, UserX } from 'lucide-react';
 import { WishlistItem, User, ContributionType, ViewState, Event, EventType, WishlistStatus, FriendRequest, GiftCircle, Vendor, Notification, NotificationType } from './types.ts';
 import { MOCK_USERS, INITIAL_WISHLIST, MOCK_CURRENT_USER_ID, INITIAL_EVENTS, INITIAL_FRIEND_REQUESTS, INITIAL_CIRCLES, MOCK_VENDORS, INITIAL_NOTIFICATIONS } from './mockData.ts';
 import { ContributionModal } from './components/ContributionModal.tsx';
@@ -651,6 +651,9 @@ const App: React.FC = () => {
   // New state for friend search
   const [friendSearchQuery, setFriendSearchQuery] = useState('');
 
+  // Profile Tab State
+  const [profileTab, setProfileTab] = useState<'PERSONAL' | 'BANK'>('PERSONAL');
+
   const getUser = (id: string) => {
     if (id === currentUserData.id) return currentUserData;
     return MOCK_USERS.find(u => u.id === id);
@@ -1022,6 +1025,24 @@ const App: React.FC = () => {
       phoneNumber: formData.get('phoneNumber') as string,
     });
     alert('Profile saved!');
+  };
+
+  const handleSaveBankDetails = (e: React.FormEvent) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const formData = new FormData(form);
+    
+    setCurrentUserData({
+      ...currentUserData,
+      bankDetails: {
+        accountName: formData.get('accountName') as string,
+        accountNumber: formData.get('accountNumber') as string,
+        bankName: formData.get('bankName') as string,
+        ifscCode: formData.get('ifscCode') as string,
+        panNumber: formData.get('panNumber') as string
+      }
+    });
+    alert('Bank details saved!');
   };
 
   const handleSaveSettings = (e: React.FormEvent) => {
@@ -2370,64 +2391,149 @@ const App: React.FC = () => {
                 </div>
             </div>
 
-            <form onSubmit={handleSaveProfile} className="space-y-6">
-                {/* Header Card */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center">
-                    <img src={me.avatar} alt="Profile" className="w-24 h-24 rounded-full border-4 border-brand-100 mb-4" />
-                    <div className="grid grid-cols-2 gap-4 w-full">
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 mb-1">First Name</label>
-                            <input name="firstName" defaultValue={me.firstName} className="w-full p-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500" required />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 mb-1">Last Name</label>
-                            <input name="lastName" defaultValue={me.lastName} className="w-full p-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500" required />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Details Card */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                    <h3 className="font-bold text-gray-800 mb-4 flex items-center">
-                        <UserIcon size={18} className="mr-2 text-brand-500" /> Personal Details
-                    </h3>
-                    
-                    {/* Email */}
-                    <div className="mb-4">
-                        <label className="block text-xs font-bold text-gray-500 mb-1">Email Address</label>
-                        <div className="relative">
-                            <Mail className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                            <input name="email" type="email" defaultValue={me.email} className="w-full pl-8 p-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500" />
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 mb-1">Date of Birth</label>
-                            <input name="dob" type="date" defaultValue={me.dob} className="w-full p-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500" />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 mb-1">Sex</label>
-                            <select name="sex" defaultValue={me.sex} className="w-full p-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500">
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                                <option value="Other">Other</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div className="mt-4">
-                        <label className="block text-xs font-bold text-gray-500 mb-1">Phone Number</label>
-                        <div className="relative">
-                            <Phone className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                            <input name="phoneNumber" type="tel" defaultValue={me.phoneNumber} className="w-full pl-8 p-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500" placeholder="+1 555-000-0000" />
-                        </div>
-                    </div>
-                </div>
-
-                <button type="submit" className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold hover:bg-gray-800 flex justify-center items-center">
-                    <Save size={18} className="mr-2" /> Save Changes
+            {/* Tabs */}
+            <div className="bg-white p-1 rounded-xl shadow-sm border border-gray-100 flex mb-6">
+                <button 
+                    onClick={() => setProfileTab('PERSONAL')}
+                    className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${profileTab === 'PERSONAL' ? 'bg-brand-50 text-brand-700' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                    Personal
                 </button>
-            </form>
+                <button 
+                    onClick={() => setProfileTab('BANK')}
+                    className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${profileTab === 'BANK' ? 'bg-brand-50 text-brand-700' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                    Bank Details
+                </button>
+            </div>
+
+            {profileTab === 'PERSONAL' ? (
+                <form onSubmit={handleSaveProfile} className="space-y-6">
+                    {/* Header Card */}
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center">
+                        <img src={me.avatar} alt="Profile" className="w-24 h-24 rounded-full border-4 border-brand-100 mb-4" />
+                        <div className="grid grid-cols-2 gap-4 w-full">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1">First Name</label>
+                                <input name="firstName" defaultValue={me.firstName} className="w-full p-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500" required />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1">Last Name</label>
+                                <input name="lastName" defaultValue={me.lastName} className="w-full p-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500" required />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Details Card */}
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <h3 className="font-bold text-gray-800 mb-4 flex items-center">
+                            <UserIcon size={18} className="mr-2 text-brand-500" /> Personal Details
+                        </h3>
+                        
+                        {/* Email */}
+                        <div className="mb-4">
+                            <label className="block text-xs font-bold text-gray-500 mb-1">Email Address</label>
+                            <div className="relative">
+                                <Mail className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                <input name="email" type="email" defaultValue={me.email} className="w-full pl-8 p-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500" />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1">Date of Birth</label>
+                                <input name="dob" type="date" defaultValue={me.dob} className="w-full p-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1">Sex</label>
+                                <select name="sex" defaultValue={me.sex} className="w-full p-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500">
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div className="mt-4">
+                            <label className="block text-xs font-bold text-gray-500 mb-1">Phone Number</label>
+                            <div className="relative">
+                                <Phone className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                <input name="phoneNumber" type="tel" defaultValue={me.phoneNumber} className="w-full pl-8 p-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500" placeholder="+1 555-000-0000" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold hover:bg-gray-800 flex justify-center items-center">
+                        <Save size={18} className="mr-2" /> Save Changes
+                    </button>
+                </form>
+            ) : (
+                <form onSubmit={handleSaveBankDetails} className="space-y-6 animate-in fade-in slide-in-from-right duration-200">
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <h3 className="font-bold text-gray-800 mb-4 flex items-center">
+                            <Landmark size={18} className="mr-2 text-brand-500" /> Bank Account Info
+                        </h3>
+                        
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1">Account Holder Name</label>
+                                <input 
+                                    name="accountName" 
+                                    defaultValue={me.bankDetails?.accountName || ''} 
+                                    placeholder="Name as per bank records"
+                                    className="w-full p-3 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500" 
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1">Account Number</label>
+                                <input 
+                                    name="accountNumber" 
+                                    type="password"
+                                    defaultValue={me.bankDetails?.accountNumber || ''} 
+                                    placeholder="Enter account number"
+                                    className="w-full p-3 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500" 
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 mb-1">Bank Name</label>
+                                    <input 
+                                        name="bankName" 
+                                        defaultValue={me.bankDetails?.bankName || ''} 
+                                        placeholder="e.g. HDFC Bank"
+                                        className="w-full p-3 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500" 
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 mb-1">IFSC Code</label>
+                                    <input 
+                                        name="ifscCode" 
+                                        defaultValue={me.bankDetails?.ifscCode || ''} 
+                                        placeholder="ABCD0123456"
+                                        className="w-full p-3 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500 uppercase" 
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1">PAN Number</label>
+                                <input 
+                                    name="panNumber" 
+                                    defaultValue={me.bankDetails?.panNumber || ''} 
+                                    placeholder="ABCDE1234F"
+                                    className="w-full p-3 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-brand-500 uppercase" 
+                                />
+                                <p className="text-[10px] text-gray-400 mt-1">Required for tax purposes on withdrawals.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold hover:bg-gray-800 flex justify-center items-center">
+                        <Save size={18} className="mr-2" /> Save Bank Details
+                    </button>
+                </form>
+            )}
         </div>
     );
   };

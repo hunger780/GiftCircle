@@ -24,6 +24,13 @@ export const MOCK_USERS: User[] = [
       maxGiftAmount: 500,
       currency: 'INR',
       autoAcceptContacts: false
+    },
+    bankDetails: {
+      accountName: 'Alex Johnson',
+      accountNumber: '9876543210',
+      bankName: 'National Bank',
+      ifscCode: 'NBIN0001234',
+      panNumber: 'ABCDE1234F'
     }
   },
   {

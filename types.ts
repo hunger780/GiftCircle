@@ -67,6 +67,14 @@ export interface UserSettings {
   autoAcceptContacts: boolean;
 }
 
+export interface BankDetails {
+  accountName: string;
+  accountNumber: string;
+  bankName: string;
+  ifscCode: string;
+  panNumber: string;
+}
+
 export interface User {
   id: string;
   firstName: string;
@@ -83,6 +91,7 @@ export interface User {
   acceptedEventIds: string[]; // Events accepted via notification
   hiddenEventIds: string[]; // Events manually hidden by user
   settings: UserSettings;
+  bankDetails?: BankDetails;
 }
 
 export interface FriendRequest {
