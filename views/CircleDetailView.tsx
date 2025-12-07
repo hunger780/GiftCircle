@@ -59,21 +59,38 @@ export const CircleDetailView: React.FC<CircleDetailViewProps> = ({
           <Users size={120} />
         </div>
         
-        <div className="flex justify-between items-start mb-4 relative z-10">
-          <div>
-            <h1 className="text-2xl font-extrabold mb-1">{circle.name}</h1>
-            <p className="text-indigo-200 text-sm">{circle.description}</p>
-          </div>
-          {isAdmin && (
-             <button 
-                onClick={onInvite}
-                className="bg-white/20 hover:bg-white/30 p-2 rounded-lg backdrop-blur-sm transition-colors"
-                title="Invite Members"
-             >
-                <UserPlus size={20} />
-             </button>
-          )}
-        </div>
+                <div className="flex justify-between items-start mb-4 relative z-10">
+                    <div>
+                        <h1 className="text-2xl font-extrabold mb-1">{circle.name}</h1>
+                        <p className="text-indigo-200 text-sm">{circle.description}</p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        {/* Contribute button - uses first active circle item to start contribution flow */}
+                        <button
+                            onClick={() => {
+                                if (circleItems.length > 0) {
+                                    onContribute(circleItems[0]);
+                                } else if (isAdmin) {
+                                    onAddGoal();
+                                }
+                            }}
+                            className="bg-white/20 hover:bg-white/30 p-2 rounded-lg backdrop-blur-sm transition-colors flex items-center"
+                            title={circleItems.length > 0 ? 'Contribute to a goal' : isAdmin ? 'Set a goal' : 'No goals to contribute to'}
+                        >
+                            <Gift size={18} />
+                        </button>
+
+                        {isAdmin && (
+                             <button 
+                                    onClick={onInvite}
+                                    className="bg-white/20 hover:bg-white/30 p-2 rounded-lg backdrop-blur-sm transition-colors"
+                                    title="Invite Members"
+                             >
+                                    <UserPlus size={20} />
+                             </button>
+                        )}
+                    </div>
+                </div>
 
         <div className="mb-4 relative z-10">
            <div className="flex justify-between text-sm font-medium mb-1 opacity-90">
