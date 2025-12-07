@@ -1,6 +1,8 @@
 
+
+
 import React, { useState } from 'react';
-import { Gift, Lock, Unlock, Users, Search, ChevronRight, X, XCircle, Check } from 'lucide-react';
+import { Gift, Lock, Unlock, Users, Search, ChevronRight, X, XCircle, Check, Shield, ShieldCheck } from 'lucide-react';
 import { User } from '../types.ts';
 
 // --- Onboarding ---
@@ -129,25 +131,45 @@ export const AddFriendModal: React.FC<AddFriendModalProps> = ({ onClose, onSend,
 // --- Create Circle ---
 interface CreateCircleModalProps {
   onClose: () => void;
-  onCreate: (name: string, description: string, memberIds: string[]) => void;
+  onCreate: (name: string, description: string, memberIds: string[], adminIds: string[]) => void;
   friends: User[];
 }
 export const CreateCircleModal: React.FC<CreateCircleModalProps> = ({ onClose, onCreate, friends }) => {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [selectedFriends, setSelectedFriends] = useState<Set<string>>(new Set());
+    const [adminFriends, setAdminFriends] = useState<Set<string>>(new Set());
 
     const toggleFriend = (id: string) => {
         const next = new Set(selectedFriends);
+        if (next.has(id)) {
+            next.delete(id);
+            // Also remove from admins if deselected
+            if (adminFriends.has(id)) {
+                const nextAdmins = new Set(adminFriends);
+                nextAdmins.delete(id);
+                setAdminFriends(nextAdmins);
+            }
+        } else {
+            next.add(id);
+        }
+        setSelectedFriends(next);
+    };
+
+    const toggleAdmin = (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        if (!selectedFriends.has(id)) return; // Should be selected first
+
+        const next = new Set(adminFriends);
         if (next.has(id)) next.delete(id);
         else next.add(id);
-        setSelectedFriends(next);
+        setAdminFriends(next);
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!name) return;
-        onCreate(name, description, Array.from(selectedFriends));
+        onCreate(name, description, Array.from(selectedFriends), Array.from(adminFriends));
     };
 
     return (
@@ -181,21 +203,40 @@ export const CreateCircleModal: React.FC<CreateCircleModalProps> = ({ onClose, o
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Add Members ({selectedFriends.size})</label>
+                            <div className="flex justify-between items-center mb-2">
+                                <label className="block text-sm font-medium text-gray-700">Add Members ({selectedFriends.size})</label>
+                                <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded">Tap shield to make Admin</span>
+                            </div>
                             <div className="space-y-2">
                                 {friends.length > 0 ? friends.map(friend => {
                                     const isSelected = selectedFriends.has(friend.id);
+                                    const isAdmin = adminFriends.has(friend.id);
                                     return (
                                         <div 
                                             key={friend.id}
                                             onClick={() => toggleFriend(friend.id)}
-                                            className={`flex items-center p-3 rounded-xl border cursor-pointer transition-colors ${isSelected ? 'border-brand-500 bg-brand-50' : 'border-gray-100'}`}
+                                            className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors ${isSelected ? 'border-brand-500 bg-brand-50' : 'border-gray-100'}`}
                                         >
-                                            <div className={`w-5 h-5 rounded-full border mr-3 flex items-center justify-center ${isSelected ? 'bg-brand-500 border-brand-500' : 'border-gray-300'}`}>
-                                                {isSelected && <Check size={12} className="text-white" />}
+                                            <div className="flex items-center">
+                                                <div className={`w-5 h-5 rounded-full border mr-3 flex items-center justify-center ${isSelected ? 'bg-brand-500 border-brand-500' : 'border-gray-300'}`}>
+                                                    {isSelected && <Check size={12} className="text-white" />}
+                                                </div>
+                                                <img src={friend.avatar} alt={friend.name} className="w-8 h-8 rounded-full mr-3" />
+                                                <div className="flex flex-col">
+                                                    <span className={`font-medium ${isSelected ? 'text-gray-900' : 'text-gray-600'}`}>{friend.name}</span>
+                                                    {isAdmin && <span className="text-[10px] text-blue-600 font-bold">Admin</span>}
+                                                </div>
                                             </div>
-                                            <img src={friend.avatar} alt={friend.name} className="w-8 h-8 rounded-full mr-3" />
-                                            <span className={`font-medium ${isSelected ? 'text-gray-900' : 'text-gray-600'}`}>{friend.name}</span>
+                                            
+                                            {isSelected && (
+                                                <button 
+                                                    onClick={(e) => toggleAdmin(e, friend.id)}
+                                                    className={`p-2 rounded-full transition-colors ${isAdmin ? 'bg-blue-100 text-blue-600' : 'bg-gray-200 text-gray-400 hover:bg-gray-300'}`}
+                                                    title={isAdmin ? "Remove Admin" : "Make Admin"}
+                                                >
+                                                    {isAdmin ? <ShieldCheck size={18} /> : <Shield size={18} />}
+                                                </button>
+                                            )}
                                         </div>
                                     );
                                 }) : (

@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useMemo } from 'react';
 import { WishlistItem, User, ContributionType, ViewState, Event, EventType, WishlistStatus, FriendRequest, GiftCircle, Notification, NotificationType } from './types.ts';
 import { MOCK_USERS, INITIAL_WISHLIST, MOCK_CURRENT_USER_ID, INITIAL_EVENTS, INITIAL_FRIEND_REQUESTS, INITIAL_CIRCLES, INITIAL_NOTIFICATIONS } from './mockData.ts';
@@ -133,7 +135,7 @@ const App: React.FC = () => {
   };
 
   const handleCancelItem = (itemId: string) => {
-      if (window.confirm('Are you sure?')) setWishlist(prev => prev.map(item => item.id === itemId ? { ...item, status: 'CANCELLED' } : item));
+      if (window.confirm('Are you sure you want to cancel this item?')) setWishlist(prev => prev.map(item => item.id === itemId ? { ...item, status: 'CANCELLED' } : item));
   };
 
   const handleEventCreation = (eventData: Partial<Event>, selectedIds: string[], newItems: Partial<WishlistItem>[]) => {
@@ -154,13 +156,43 @@ const App: React.FC = () => {
       if (activeCircleId) setCircles(circles.map(c => c.id === activeCircleId ? { ...c, memberIds: selectedIds } : c));
   };
 
-  const handleCreateCircle = (name: string, description: string, memberIds: string[]) => {
-      const newCircle: GiftCircle = { id: `gc${Date.now()}`, name, description, adminId: me.id, memberIds: [...memberIds, me.id], createdTimestamp: Date.now() };
+  const handleCreateCircle = (name: string, description: string, memberIds: string[], adminIds: string[]) => {
+      // Ensure creator is always admin and member
+      const allMembers = Array.from(new Set([...memberIds, me.id]));
+      const allAdmins = Array.from(new Set([...adminIds, me.id]));
+
+      const newCircle: GiftCircle = { 
+          id: `gc${Date.now()}`, 
+          name, 
+          description, 
+          adminIds: allAdmins, 
+          memberIds: allMembers, 
+          createdTimestamp: Date.now() 
+      };
       setCircles([...circles, newCircle]);
       setShowCreateCircleModal(false);
       setActiveCircleId(newCircle.id);
       setView('CIRCLE_DETAIL');
       setFriendsViewTab('CIRCLES');
+  };
+
+  const handleToggleCircleAdmin = (circleId: string, memberId: string) => {
+    setCircles(prevCircles => prevCircles.map(c => {
+        if (c.id !== circleId) return c;
+        const isAdmin = c.adminIds.includes(memberId);
+        let newAdminIds = [...c.adminIds];
+        if (isAdmin) {
+             // Cannot remove self if only admin
+             if (c.adminIds.length === 1 && memberId === me.id) {
+                 alert("You are the only admin. You cannot remove yourself.");
+                 return c;
+             }
+             newAdminIds = newAdminIds.filter(id => id !== memberId);
+        } else {
+             newAdminIds.push(memberId);
+        }
+        return { ...c, adminIds: newAdminIds };
+    }));
   };
 
   const handleSendFriendRequest = (id: string) => {
@@ -201,7 +233,7 @@ const App: React.FC = () => {
         
         {view === 'EVENT_PLANNING' && <EventPlanningView onBack={() => setView('HOME')} currencySymbol={currencySymbol} />}
 
-        {view === 'CIRCLE_DETAIL' && activeCircleId && <CircleDetailView circle={circles.find(c => c.id === activeCircleId)!} wishlist={wishlist} me={me} onBack={() => setView('FRIENDS')} onInvite={() => setShowCircleInviteModal(true)} onAddGoal={() => { setAddingItemToCircleId(activeCircleId); setView('ADD_ITEM'); }} onItemClick={setViewingItemId} onContribute={setContributingItem} currencySymbol={currencySymbol} />}
+        {view === 'CIRCLE_DETAIL' && activeCircleId && <CircleDetailView circle={circles.find(c => c.id === activeCircleId)!} wishlist={wishlist} me={me} onBack={() => setView('FRIENDS')} onInvite={() => setShowCircleInviteModal(true)} onAddGoal={() => { setAddingItemToCircleId(activeCircleId); setView('ADD_ITEM'); }} onItemClick={setViewingItemId} onContribute={setContributingItem} onToggleAdmin={(memberId) => handleToggleCircleAdmin(activeCircleId, memberId)} onCancelItem={handleCancelItem} currencySymbol={currencySymbol} />}
 
         {view === 'MY_PROFILE' && <MyProfileView me={me} onBack={() => setView('HOME')} onEditProfile={handleUpdateProfile} onGoToSettings={() => setView('SETTINGS')} onGoToWallet={() => setView('WALLET')} />}
         

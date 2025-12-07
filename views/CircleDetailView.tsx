@@ -1,7 +1,9 @@
 
+
+
 import React, { useMemo } from 'react';
 import { GiftCircle, WishlistItem, User, ContributionType } from '../types.ts';
-import { ArrowLeft, Users, PlusCircle, UserPlus, Trash2, Gift, Check, Clock } from 'lucide-react';
+import { ArrowLeft, Users, PlusCircle, UserPlus, Trash2, Gift, Check, Clock, ShieldCheck, Shield } from 'lucide-react';
 import { WishlistCard } from '../components/WishlistCard.tsx';
 import { getUser } from '../utils/helpers.tsx';
 
@@ -14,6 +16,8 @@ interface CircleDetailViewProps {
   onAddGoal: () => void;
   onItemClick: (itemId: string) => void;
   onContribute: (item: WishlistItem) => void;
+  onToggleAdmin: (memberId: string) => void;
+  onCancelItem: (itemId: string) => void;
   currencySymbol: string;
 }
 
@@ -26,10 +30,12 @@ export const CircleDetailView: React.FC<CircleDetailViewProps> = ({
   onAddGoal,
   onItemClick,
   onContribute,
+  onToggleAdmin,
+  onCancelItem,
   currencySymbol
 }) => {
   const circleItems = wishlist.filter(w => w.circleId === circle.id && w.status === 'ACTIVE');
-  const isAdmin = circle.adminId === me.id || (circle as any).adminIds?.includes(me.id); // Handle legacy or new structure
+  const isAdmin = circle.adminIds.includes(me.id);
 
   // Calculate stats
   const totalGoal = circleItems.reduce((sum, item) => sum + item.price, 0);
@@ -111,6 +117,47 @@ export const CircleDetailView: React.FC<CircleDetailViewProps> = ({
         </div>
       </div>
 
+      {/* Members Management */}
+      <div className="mb-8">
+          <h3 className="font-bold text-gray-800 text-lg mb-3">Members ({circle.memberIds.length})</h3>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-100">
+              {circle.memberIds.map(id => {
+                  const u = getUser(id);
+                  if (!u) return null;
+                  const isMemberAdmin = circle.adminIds.includes(id);
+                  const isMe = id === me.id;
+
+                  return (
+                      <div key={id} className="p-3 flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                              <img src={u.avatar} alt={u.name} className="w-10 h-10 rounded-full object-cover" />
+                              <div>
+                                  <p className="font-bold text-sm text-gray-900 flex items-center">
+                                      {u.name} {isMe && <span className="ml-1 text-gray-400 text-xs font-normal">(You)</span>}
+                                  </p>
+                                  {isMemberAdmin && (
+                                      <span className="text-[10px] text-blue-600 font-bold flex items-center bg-blue-50 px-1.5 py-0.5 rounded w-fit mt-0.5">
+                                          <ShieldCheck size={10} className="mr-1" /> Admin
+                                      </span>
+                                  )}
+                              </div>
+                          </div>
+                          
+                          {isAdmin && !isMe && (
+                              <button 
+                                  onClick={() => onToggleAdmin(id)}
+                                  className={`p-2 rounded-full transition-colors ${isMemberAdmin ? 'text-blue-600 bg-blue-50 hover:bg-blue-100' : 'text-gray-400 hover:bg-gray-100'}`}
+                                  title={isMemberAdmin ? "Remove Admin Access" : "Make Admin"}
+                              >
+                                  {isMemberAdmin ? <ShieldCheck size={18} /> : <Shield size={18} />}
+                              </button>
+                          )}
+                      </div>
+                  );
+              })}
+          </div>
+      </div>
+
       {/* Goals Section */}
       <div>
         <div className="flex justify-between items-center mb-4">
@@ -130,10 +177,12 @@ export const CircleDetailView: React.FC<CircleDetailViewProps> = ({
                 <WishlistCard
                     key={item.id}
                     item={item}
-                    isOwn={false} // Allow contributions even if user added it, as it's a group effort
+                    isOwn={false}
+                    isAdmin={isAdmin}
                     currencySymbol={currencySymbol}
                     onClick={onItemClick}
                     onContribute={onContribute}
+                    onCancel={onCancelItem}
                 />
             )) : (
                 <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200">

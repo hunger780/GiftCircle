@@ -1,4 +1,6 @@
 
+
+
 import React from 'react';
 import { WishlistItem, Event } from '../types.ts';
 import { ExternalLink, Gift, Share2, X } from 'lucide-react';
@@ -7,6 +9,7 @@ import { getEventIcon } from '../utils/helpers.tsx';
 interface WishlistCardProps {
   item: WishlistItem;
   isOwn: boolean;
+  isAdmin?: boolean;
   currencySymbol: string;
   relatedEvent?: Event;
   onContribute?: (item: WishlistItem) => void;
@@ -16,7 +19,8 @@ interface WishlistCardProps {
 
 export const WishlistCard: React.FC<WishlistCardProps> = ({ 
   item, 
-  isOwn, 
+  isOwn,
+  isAdmin,
   currencySymbol, 
   relatedEvent, 
   onContribute, 
@@ -25,6 +29,11 @@ export const WishlistCard: React.FC<WishlistCardProps> = ({
 }) => {
   const progress = Math.min((item.fundedAmount / item.price) * 100, 100);
   const isCancelled = item.status === 'CANCELLED';
+
+  // Can manage if own item or admin of circle
+  const canManage = isOwn || isAdmin;
+  // Can contribute if it's not cancelled and (not own OR isAdmin because admins can chip in too)
+  const canContribute = !isCancelled && onContribute && item.fundedAmount < item.price && (!isOwn || isAdmin);
 
   return (
     <div 
@@ -70,16 +79,17 @@ export const WishlistCard: React.FC<WishlistCardProps> = ({
             <div className={`h-2.5 rounded-full transition-all duration-500 ${isCancelled ? 'bg-gray-400' : 'bg-brand-500'}`} style={{ width: `${progress}%` }}></div>
           </div>
 
-          {!isOwn && item.fundedAmount < item.price && !isCancelled && onContribute && (
+          {canContribute && (
             <button 
               onClick={(e) => { e.stopPropagation(); onContribute(item); }}
-              className="w-full bg-gray-900 text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition-colors flex justify-center items-center space-x-2"
+              className="w-full bg-gray-900 text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition-colors flex justify-center items-center space-x-2 mb-2"
             >
               <Gift size={18} />
               <span>Contribute</span>
             </button>
           )}
-          {isOwn && !isCancelled && (
+          
+          {canManage && !isCancelled && (
              <div className="flex space-x-2">
                 <button onClick={(e) => e.stopPropagation()} className="flex-1 bg-gray-50 text-gray-600 border border-gray-200 py-3 rounded-xl font-semibold flex justify-center items-center space-x-2 hover:bg-gray-100">
                   <Share2 size={18} />
@@ -96,12 +106,13 @@ export const WishlistCard: React.FC<WishlistCardProps> = ({
                 )}
              </div>
           )}
-          {isOwn && isCancelled && (
+
+          {canManage && isCancelled && (
              <div className="p-3 bg-gray-50 rounded-lg text-center text-xs text-gray-500">
                 Product cancelled. Active funds moved to wallet.
              </div>
           )}
-          {!isOwn && item.fundedAmount >= item.price && (
+          {!canManage && item.fundedAmount >= item.price && (
              <button disabled className="w-full bg-green-100 text-green-700 py-3 rounded-xl font-semibold">
                Fully Funded!
              </button>

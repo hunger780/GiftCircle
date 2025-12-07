@@ -1,4 +1,5 @@
 
+
 export enum ContributionType {
   LOCKED = 'LOCKED', // Only for the specific product
   FREE = 'FREE'     // User can use cash for anything
@@ -55,7 +56,7 @@ export interface GiftCircle {
   id: string;
   name: string;
   description: string;
-  adminId: string;
+  adminIds: string[];
   memberIds: string[];
   createdTimestamp: number;
 }

@@ -1,5 +1,6 @@
 
 
+
 import { User, WishlistItem, Event, EventType, FriendRequest, GiftCircle, Vendor, Notification, NotificationType, ShoppingItem } from './types.ts';
 
 export const MOCK_CURRENT_USER_ID = 'u1';
@@ -211,7 +212,7 @@ export const INITIAL_CIRCLES: GiftCircle[] = [
         id: 'gc1',
         name: 'Dad\'s Retirement Gift',
         description: 'Collecting for a nice watch for Dad.',
-        adminId: 'u1',
+        adminIds: ['u1'],
         memberIds: ['u1', 'u2', 'u3', 'u4'],
         createdTimestamp: Date.now() - 10000000
     }
